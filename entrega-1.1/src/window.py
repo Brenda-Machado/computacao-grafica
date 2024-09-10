@@ -17,7 +17,7 @@ from container import Container
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('qt_design/test_ui.ui', self)
+        uic.loadUi('src/qt_design/test_ui.ui', self)
 
         self.setCanvas()
         self.setPainter()

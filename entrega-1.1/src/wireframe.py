@@ -13,7 +13,7 @@ from object import Point
 class UiPolygon(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi('qt_design/new_polygon.ui', self)
+        uic.loadUi('src/qt_design/new_polygon.ui', self)
 
         self.poly_list = []
 
