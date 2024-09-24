@@ -15,6 +15,8 @@ from line import UiLine
 from wireframe import UiPolygon
 from container import Container
 from transform import UiTransform
+from rotwindow import UiRotWin
+from descriptorobj import DescriptorOBJ
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
@@ -33,12 +35,22 @@ class Ui(QtWidgets.QMainWindow):
         
         self.cgViewport = Container(self.vpSize[0], self.vpSize[1], self.vpSize[2], self.vpSize[3])
         self.cgWindow = Container(self.wSize[0], self.wSize[1], self.wSize[2], self.wSize[3])
-
+        self.cgWindowPPC = Container(-1,-1,1,1)
+        self.descObj = DescriptorOBJ()
+        
+        
+        self.ppcMatrix =    [   [0, 0, 0],
+                                [0, 0, 0],
+                                [0, 0, 0]
+                            ]
+        
+        self.makePPCmatrix()
+        self.applyPPCmatrixWindow()
 
     def viewportTransformation(self, point):
-        xvp = (point.x - self.cgWindow.xMin)/(self.cgWindow.xMax - self.cgWindow.xMin) * (self.cgViewport.xMax - self.cgViewport.xMin) 
-        yvp = (1 - ((point.y - self.cgWindow.yMin)/(self.cgWindow.yMax - self.cgWindow.yMin))) * (self.cgViewport.yMax - self.cgViewport.yMin)
-
+        xvp = (point.cn_x - self.cgWindowPPC.xMin)/(self.cgWindowPPC.xMax - self.cgWindowPPC.xMin) * (self.cgViewport.xMax - self.cgViewport.xMin) 
+        yvp = (1 - ((point.cn_y - self.cgWindowPPC.yMin)/(self.cgWindowPPC.yMax - self.cgWindowPPC.yMin))) * (self.cgViewport.yMax - self.cgViewport.yMin)
+        
         return (round(xvp), round(yvp))
     
     def setCanvas(self):
@@ -66,10 +78,17 @@ class Ui(QtWidgets.QMainWindow):
         self.panDownButton.clicked.connect(self.panDown)
 
         self.transButton.clicked.connect(self.transform_window)
+        self.rotWindowButton.clicked.connect(self.run_window)
         self.RestoreButtom.clicked.connect(self.restoreOriginal)
+        self.loadButton.clicked.connect(self.loadObjs)
         self.clear.clicked.connect(self.drawAll)
 
     def drawOne(self, object):
+        self.applyPPCmatrixOne(object)
+        self.pen = QtGui.QPen(QtGui.QColor(object.color[0], object.color[1], object.color[2], 255))
+        self.pen.setWidth(5)
+        self.painter.setPen(self.pen)
+
         if object.type == "Point":
             (x, y) = self.viewportTransformation(object)
             print(x)
@@ -106,6 +125,8 @@ class Ui(QtWidgets.QMainWindow):
             self.displayFile.append(new_point)
             self.indexes[0] += 1
             self.objectList.addItem(new_point.name)
+            if new_point_dialog.rValue.text() and new_point_dialog.gValue.text() and new_point_dialog.bValue.text():
+                new_point.color = (QtGui.QColor(int(new_point_dialog.rValue.text()), int(new_point_dialog.gValue.text()), int(new_point_dialog.bValue.text()), 255))
             self.drawOne(new_point)
 
             self.status.addItem("New Point Added")
@@ -128,10 +149,7 @@ class Ui(QtWidgets.QMainWindow):
             self.indexes[1] += 1
             self.objectList.addItem(new_line.name)
             if new_line_dialog.rValue.text() and new_line_dialog.gValue.text() and new_line_dialog.bValue.text():
-        
-                self.pen = QtGui.QPen((QtGui.QColor(int(new_line_dialog.rValue.text()), int(new_line_dialog.gValue.text()), int(new_line_dialog.bValue.text()), 255))) 
-                self.pen.setWidth(5)
-                self.painter.setPen(self.pen)
+                new_line.color = (QtGui.QColor(int(new_line_dialog.rValue.text()), int(new_line_dialog.gValue.text()), int(new_line_dialog.bValue.text()), 255))
             self.drawOne(new_line)
 
             self.status.addItem("New Line Added")
@@ -150,9 +168,7 @@ class Ui(QtWidgets.QMainWindow):
             self.indexes[2] += 1
             self.objectList.addItem(new_poly.name)
             if new_polygon_dialog.rValue.text() and new_polygon_dialog.gValue.text() and new_polygon_dialog.bValue.text():
-                self.pen = QtGui.QPen((QtGui.QColor(int(new_polygon_dialog.rValue.text()), int(new_polygon_dialog.gValue.text()), int(new_polygon_dialog.bValue.text()), 255))) 
-                self.pen.setWidth(5)
-                self.painter.setPen(self.pen)
+                new_poly.color = (QtGui.QColor(int(new_polygon_dialog.rValue.text()), int(new_polygon_dialog.gValue.text()), int(new_polygon_dialog.bValue.text()), 255))
             self.drawOne(new_poly)
             self.status.addItem("New Polygon Added")
         else:
@@ -214,7 +230,17 @@ class Ui(QtWidgets.QMainWindow):
                 self.status.addItem(obj.name + " suceeded on rotation.")
                 self.drawAll()
                 self.status.addItem(obj.name + " suceeded on transformation")
-    
+
+    def run_window(self):
+        rotDialog = UiRotWin()
+        if rotDialog.exec_():
+            if rotDialog.rot_angulo.text():
+                ang = int(rotDialog.rot_angulo.text())
+                self.windowAngle -= ang
+                self.makePPCmatrix()
+                self.applyPPCmatrixWindow()
+                self.drawAll()
+
     def find_center(self, obj):
         if obj.type == "Point":
             return (obj.x, obj.y)
@@ -234,6 +260,88 @@ class Ui(QtWidgets.QMainWindow):
             x, y = x//len(obj.points), y//len(obj.points)
             
             return (x, y)
+    def find_window_center(self):
+        x = (self.cgWindow.xMin + self.cgWindow.xMax)/2
+        y = (self.cgWindow.yMin + self.cgWindow.yMax)/2
+        return (x,y)
+
+    def makePPCmatrix(self):
+        width = self.cgWindow.xMax - self.cgWindow.xMin
+        height = self.cgWindow.yMax - self.cgWindow.yMin
+        center = self.find_window_center()
+        matTrans =  [   [1, 0, 0],
+                        [0, 1, 0],
+                        [-center[0], -center[1], 1]
+                    ]
+
+        ang = np.deg2rad(self.windowAngle)
+
+        matRot =    [   [np.cos(ang), -np.sin(ang), 0],
+                        [np.sin(ang), np.cos(ang), 0],
+                        [0, 0, 1]
+                    ]
+        
+        matScale =  [   [2/width,   0,          0],
+                        [0,         2/height,   1],
+                        [0,         0,          1]
+
+                    ]
+        
+        matPPC = np.dot(np.dot(matTrans, matRot), matScale)
+        self.ppcMatrix = matPPC
+
+    def applyPPCmatrixOne(self, obj):
+        if obj.type == "Point":
+            P = [obj.x, obj.y, 1]
+            (X,Y,W) = np.dot(P, self.ppcMatrix)
+            obj.cn_x = X
+            obj.cn_y = Y
+        elif obj.type == "Line":
+            P1 = [obj.p1.x, obj.p1.y, 1]
+            P2 = [obj.p2.x, obj.p2.y, 1]
+            (X1, Y1, W1) = np.dot(P1, self.ppcMatrix)
+            (X2, Y2, W2) = np.dot(P2, self.ppcMatrix)
+            obj.p1.cn_x = X1
+            obj.p1.cn_y = Y1
+            obj.p2.cn_x = X2
+            obj.p2.cn_y = Y2
+            print("N: {}, {}".format(obj.p1.x, obj.p1.y))
+            print("PPC: {}, {}".format(obj.p1.cn_x, obj.p1.cn_y))
+        elif obj.type == "Polygon":
+            for p in obj.points:
+                P = (p.x, p.y, 1)
+                (X,Y,W) = np.matmul(P, self.ppcMatrix)
+                p.cn_x = X
+                p.cn_y = Y
+
+    def applyPPCmatrixAll(self):
+        for obj in self.displayFile:
+            self.applyPPCmatrixOne(obj)
+
+    def applyPPCmatrixWindow(self):
+        p1 = Point(self.cgWindow.xMin, self.cgWindow.yMin)
+        p2 = Point(self.cgWindow.xMin, self.cgWindow.yMax)
+        p3 = Point(self.cgWindow.xMax, self.cgWindow.yMax)
+        p4 = Point(self.cgWindow.xMax, self.cgWindow.yMin)
+        temp = Wireframe([p1, p2, p3, p4])
+        self.applyPPCmatrixOne(temp)
+
+        xs = []
+        ys = []
+        for point in temp.points:
+            xs.append(point.cn_x)
+            ys.append(point.cn_y)
+
+        xmin = min(xs)
+        ymin = min(ys)
+        xmax = max(xs)
+        ymax = max(ys)
+
+        self.cgWindowPPC.xMin = xmin
+        self.cgWindowPPC.yMin = ymin
+        self.cgWindowPPC.xMax = xmax
+        self.cgWindowPPC.yMax = ymax
+
 
     def translation(self, obj, Dx, Dy):
         if obj.type == "Point":
@@ -270,6 +378,13 @@ class Ui(QtWidgets.QMainWindow):
                 (X,Y,W) = np.matmul(P, T)
                 p.x = X
                 p.y = Y 
+    
+    def loadObjs(self):
+        newObjs = self.descObj.load("test.obj")
+        for obj in newObjs:
+            self.displayFile.append(obj)
+            self.objectList.addItem(obj.name)
+        self.drawAll()
 
     def escalation(self, obj, Sx, Sy):
         centroInicial = self.find_center(obj)
@@ -414,4 +529,8 @@ class Ui(QtWidgets.QMainWindow):
         self.cgWindow.xMax = self.wSize[2]
         self.cgWindow.yMax = self.wSize[3]
         
+        self.windowAngle = 0
+
+        self.makePPCmatrix()
+        self.applyPPCmatrixWindow()
         self.drawAll()
