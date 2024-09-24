@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>204</width>
-    <height>365</height>
+    <height>448</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>320</y>
+     <y>410</y>
      <width>161</width>
      <height>32</height>
     </rect>
@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Novo Linha</string>
+    <string>New Line</string>
    </property>
   </widget>
   <widget class="QLabel" name="label1">
@@ -98,7 +98,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Ponto 1</string>
+    <string>Point 1</string>
    </property>
   </widget>
   <widget class="QLabel" name="label3">
@@ -137,7 +137,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Ponto 2</string>
+    <string>Point 2</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="yValue2">
@@ -157,6 +157,98 @@
      <y>220</y>
      <width>113</width>
      <height>25</height>
+ </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="xValue2">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>220</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="gValue">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>340</y>
+     <width>51</width>
+     <height>16</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>310</y>
+     <width>91</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Color of the polygon</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>370</y>
+     <width>67</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>R</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>370</y>
+     <width>67</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>G</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_11">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>370</y>
+     <width>67</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>B</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="bValue">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>340</y>
+     <width>51</width>
+     <height>16</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="rValue">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>340</y>
+     <width>51</width>
+     <height>16</height>
     </rect>
    </property>
   </widget>

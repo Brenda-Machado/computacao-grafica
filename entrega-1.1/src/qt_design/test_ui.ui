@@ -92,7 +92,7 @@
      <bool>false</bool>
     </property>
     <property name="text">
-     <string>TextLabel</string>
+     <string/>
     </property>
    </widget>
    <widget class="QListWidget" name="status">
@@ -113,6 +113,12 @@
       <width>281</width>
       <height>101</height>
      </rect>
+    </property>
+    <property name="selectionMode">
+     <enum>QAbstractItemView::SingleSelection</enum>
+    </property>
+    <property name="selectionRectVisible">
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QPushButton" name="clear">
@@ -231,6 +237,19 @@
      <bool>false</bool>
     </property>
    </widget>
+   <widget class="QPushButton" name="transButton">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>350</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Transform</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -238,7 +257,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>19</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

@@ -138,7 +138,7 @@ class Ui(QtWidgets.QMainWindow):
         new_polygon_dialog = UiPolygon()
         if new_polygon_dialog.exec_() and new_polygon_dialog.point_list:
             print("New polygon")
-            new_poly = Wireframe(new_polygon_dialog.polyList, "Polygon {}".format(self.indexes[2]))
+            new_poly = Wireframe(new_polygon_dialog.poly_list, "Polygon {}".format(self.indexes[2]))
             self.displayFile.append(new_poly)
             self.indexes[2] += 1
             self.objectList.addItem(new_poly.name)
