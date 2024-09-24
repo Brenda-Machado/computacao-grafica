@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Angulo</string>
+    <string>Angle</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="rot_angulo">

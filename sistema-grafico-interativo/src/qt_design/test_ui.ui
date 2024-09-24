@@ -248,6 +248,32 @@
     </property>
     <property name="text">
      <string>Transform</string>
+</property>
+   </widget>
+   <widget class="QPushButton" name="rotWindowButton">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>200</y>
+      <width>141</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Rotate Window</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="loadButton">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>410</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Load OBJ</string>
     </property>
    </widget>
   </widget>

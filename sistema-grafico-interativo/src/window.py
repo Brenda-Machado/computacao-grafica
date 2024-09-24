@@ -8,7 +8,6 @@ import sys
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
-from dataclasses import dataclass
 from object import Point, Line, Wireframe
 from point import UiPoint
 from line import UiLine
@@ -32,6 +31,7 @@ class Ui(QtWidgets.QMainWindow):
 
         self.vpSize = [0, 0, 400, 400]
         self.wSize = [0, 0, 400, 400]
+        self.windowAngle = 0
         
         self.cgViewport = Container(self.vpSize[0], self.vpSize[1], self.vpSize[2], self.vpSize[3])
         self.cgWindow = Container(self.wSize[0], self.wSize[1], self.wSize[2], self.wSize[3])
