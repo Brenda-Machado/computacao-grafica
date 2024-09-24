@@ -94,7 +94,7 @@
    </widget>
    <widget class="QWidget" name="escTab">
     <attribute name="title">
-     <string>Escalonamento</string>
+     <string>Escalation</string>
     </attribute>
     <widget class="QLabel" name="label_3">
      <property name="geometry">
@@ -145,7 +145,7 @@
    </widget>
    <widget class="QWidget" name="rotTab">
     <attribute name="title">
-     <string>Rotação</string>
+     <string>Rotation</string>
     </attribute>
     <widget class="QLabel" name="label_9">
      <property name="geometry">
@@ -180,7 +180,7 @@
       </rect>
      </property>
      <property name="title">
-      <string>Tipo da rotação:</string>
+      <string>Rotation type:</string>
      </property>
      <widget class="QRadioButton" name="rotOrigem">
       <property name="geometry">

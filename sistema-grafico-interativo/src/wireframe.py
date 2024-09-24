@@ -21,10 +21,10 @@ class UiPolygon(QtWidgets.QDialog):
 
     def new_point_window(self):
         new_point_window_dialog = UiPoint()
-        if new_point_window_dialog.exec_() and new_point_window_dialog.xValue.text() and new_point_window_dialog.yValue.text():
+        if new_point_window_dialog.exec_() and new_point_window_dialog.x_value.text() and new_point_window_dialog.y_value.text():
             print("New Point")
-            x = int(new_point_window_dialog.xValue.text())
-            y = int(new_point_window_dialog.yValue.text())
+            x = int(new_point_window_dialog.x_value.text())
+            y = int(new_point_window_dialog.y_value.text())
             print(x)
             print(y)
             new_point = Point(x, y, "")
