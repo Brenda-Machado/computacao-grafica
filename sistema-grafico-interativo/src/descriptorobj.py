@@ -116,10 +116,14 @@ class DescriptorOBJ:
                 print(e[1])
                 points = e[1]
                 pointList = []
+                color = (1,1,1)
                 for p in points:
                     realPoint = verts[int(p)-1]
                     pointList.append(realPoint)
-                newPoly = Wireframe(pointList, preobjects[objIndex].name, preobjects[objIndex].color)
+                if preobjects[objIndex].color == None:
+                    newPoly = Wireframe(pointList, preobjects[objIndex].name, color)
+                else:
+                    newPoly = Wireframe(pointList, preobjects[objIndex].name, preobjects[objIndex].color)
                 objects.append(newPoly)
 
             else:
