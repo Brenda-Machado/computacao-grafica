@@ -4,9 +4,8 @@ Brenda Silva Machado - 21101954
 
 """
 
-import sys
 import numpy as np
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5 import QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
 from object import Point, Line, Wireframe
 from point import UiPoint

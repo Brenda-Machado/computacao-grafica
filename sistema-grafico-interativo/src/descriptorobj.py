@@ -5,9 +5,6 @@ Brenda Silva Machado - 21101954
 """
 
 import pathlib
-from PyQt5 import QtGui, QtCore
-import PyQt5
-from PyQt5.QtCore import Qt
 from preobject import PreObject
 from object import Point, Line, Wireframe
 

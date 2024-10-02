@@ -1,6 +1,11 @@
+"""
+INE5420 - 2024/2
+Brenda Silva Machado - 21101954
+
+"""
+
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import Qt
+from PyQt5 import QtWidgets, uic
 
 class UiRotWin(QtWidgets.QDialog):
     def __init__(self, parent=None):
