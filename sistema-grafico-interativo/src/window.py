@@ -5,7 +5,7 @@ Brenda Silva Machado - 21101954
 """
 
 import numpy as np
-from PyQt5 import QtGui, QtWidgets, uic
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
 from object import Point, Line, Wireframe
 from point import UiPoint
@@ -29,12 +29,13 @@ class Ui(QtWidgets.QMainWindow):
         self.displayFile = []
 
         self.vpSize = [0, 0, 400, 400]
-        self.wSize = [0, 0, 400, 400]
+        self.wSize = [0, 0, 400, 300]
         self.windowAngle = 0
         
         self.cgViewport = Container(self.vpSize[0], self.vpSize[1], self.vpSize[2], self.vpSize[3])
         self.cgWindow = Container(self.wSize[0], self.wSize[1], self.wSize[2], self.wSize[3])
         self.cgWindowPPC = Container(-1,-1,1,1)
+        self.cgSubcanvas = Container(20, 20, 380, 380)
         self.descObj = DescriptorOBJ()
         
         
@@ -45,6 +46,7 @@ class Ui(QtWidgets.QMainWindow):
         
         self.makePPCmatrix()
         self.applyPPCmatrixWindow()
+        self.drawBorder()
 
     def viewportTransformation(self, point):
         xvp = (point.cn_x - self.cgWindowPPC.xMin)/(self.cgWindowPPC.xMax - self.cgWindowPPC.xMin) * (self.cgViewport.xMax - self.cgViewport.xMin) 
@@ -80,7 +82,25 @@ class Ui(QtWidgets.QMainWindow):
         self.rotWindowButton.clicked.connect(self.run_window)
         self.RestoreButtom.clicked.connect(self.restoreOriginal)
         self.loadButton.clicked.connect(self.loadObjs)
-        self.clear.clicked.connect(self.drawAll)
+
+    def drawBorder(self, color=Qt.red):
+        self.pen = QtGui.QPen(color)
+        self.pen.setWidth(5)
+        self.painter.setPen(self.pen)
+        points = [(20, 20), (20, 380), (380, 20), (380, 380)]
+
+        polygon = QtGui.QPolygonF()
+        for point in points:
+            new_point = QtCore.QPointF(point[0], point[1])
+            
+            polygon.append(new_point)
+        path = QtGui.QPainterPath()
+        path.addPolygon(polygon)
+        self.painter.setBrush(QtGui.QColor(Qt.red))
+        self.painter.drawLine(polygon[0], polygon[1])
+        self.painter.drawLine(polygon[0], polygon[2])
+        self.painter.drawLine(polygon[1], polygon[3])
+        self.painter.drawLine(polygon[2], polygon[3])
 
     def drawOne(self, object):
         self.applyPPCmatrixOne(object)
@@ -90,29 +110,315 @@ class Ui(QtWidgets.QMainWindow):
 
         if object.type == "Point":
             (x, y) = self.viewportTransformation(object)
-            print(x)
-            print(y)
+            if self.pointClipping(x,y):
+                self.painter.drawPoint(x, y)
             self.painter.drawPoint(x, y)
+
         elif object.type == "Line":
             (x1, y1) = self.viewportTransformation(object.p1)
             (x2,y2) = self.viewportTransformation(object.p2)
             print(f"Point 1 ({x1}, {y1})")
             print(f"Point 2 ({x2}, {y2})")
-            self.painter.drawLine(x1, y1, x2, y2)
+            if self.csCheck.isChecked():
+                clipRes = self.csLineClipping(x1, y1, x2, y2)
+            else:
+                clipRes = self.lbLineClipping(x1, y1, x2, y2)
+            print(clipRes)
+            if clipRes[0]:
+                self.painter.drawLine(int(clipRes[1]), int(clipRes[2]), int(clipRes[3]), int(clipRes[4]))
+
         elif object.type == "Polygon":
             ps = []
+            fill_p = []
             for p in object.points:
                 ps.append(self.viewportTransformation(p))
+            ok, newobj = self.Waclippig(ps)
+            nps = newobj[0]
             
-            for i in range(1, len(ps)):
-                self.painter.drawLine(ps[i-1][0], ps[i-1][1], ps[i][0], ps[i][1])
-            self.painter.drawLine(ps[-1][0], ps[-1][1], ps[0][0], ps[0][1])
+            if not ok: 
+                return
+
+            for i in range(1, len(nps)):
+                self.painter.drawLine(int(nps[i-1][0]), int(nps[i-1][1]), int(nps[i][0]), int(nps[i][1]))
+            
+                if object.filled:
+                    fill_p.append((int(nps[i-1][0]), int(nps[i-1][1])))
+
+            if object.filled:
+                fill_p.append((int(nps[-1][0]), int(nps[-1][1])))
+
+            if fill_p:
+                polygon = QtGui.QPolygonF()
+
+                for point in fill_p:
+                    new_point = QtCore.QPointF(point[0], point[1])
+                    polygon.append(new_point)
+
+                path = QtGui.QPainterPath()
+                path.addPolygon(polygon)
+                self.painter.setBrush(QtGui.QColor(*object.color))
+                self.painter.drawPath(path)
+                
+            if nps[-1] == nps[:-1][-1]: 
+                return 
+            
+            self.painter.drawLine(int(nps[-1][0]), int(nps[-1][1]), int(nps[0][0]), int(nps[0][1]))
+
 
     def drawAll(self):
         self.mainLabel.pixmap().fill(Qt.white)
+        self.drawBorder()
         for object in self.displayFile:
             self.drawOne(object)
-        self.update()
+            self.drawBorder()
+            self.update()
+    
+    def pointClipping(self, x, y):
+        xIn = False
+        yIn = False
+
+        if x <= self.cgSubcanvas.xMax and self.cgSubcanvas.xMin <= x:
+            xIn = True
+
+        if y <= self.cgSubcanvas.yMax and self.cgSubcanvas.yMin <= y:
+            yIn = True
+
+        return xIn and yIn
+    
+    def rcFinder(self, x, y):
+        res = 0
+        if y > self.cgSubcanvas.yMax:
+            res += 8
+        elif y < self.cgSubcanvas.yMin:
+            res += 4
+
+        if x < self.cgSubcanvas.xMin:
+            res += 1
+        elif x > self.cgSubcanvas.xMax:
+            res += 2
+        return res
+
+    def csLineClipping(self, ox1, oy1, ox2, oy2):
+        x1 = ox1
+        y1 = oy1
+
+        x2 = ox2
+        y2 = oy2
+
+        rc1 = 0
+        rc2 = 0
+        
+        rc1 = rc1 | self.rcFinder(x1, y1)
+        rc2 = rc2 | self.rcFinder(x2, y2)
+
+        while True:
+            if rc1 == rc2 and rc1 == 0:
+                return (True, x1, y1, x2, y2)
+            elif rc1 & rc2 != 0:
+                return (False, 0, 0, 0, 0)
+            
+            intX = 0
+            intY = 0
+
+            if rc1 != 0:
+                rcMax = rc1
+            else:
+                rcMax = rc2
+
+            if rcMax & 8  == 8:
+                intX = x1 + (x2 - x1) * (self.cgSubcanvas.yMax - y1) / (y2 - y1)
+                intY = self.cgSubcanvas.yMax
+            if rcMax & 4 == 4:
+                intX = x1 + (x2 - x1) * (self.cgSubcanvas.yMin - y1) / (y2 - y1)
+                intY = self.cgSubcanvas.yMin
+            if rcMax & 2 == 2:
+                intY = y1 + (y2 - y1) * (self.cgSubcanvas.xMax - x1) / (x2 - x1)
+                intX = self.cgSubcanvas.xMax
+            if rcMax & 1 == 1:
+                intY = y1 + (y2 - y1) * (self.cgSubcanvas.xMin - x1) / (x2 - x1)
+                intX = self.cgSubcanvas.xMin
+
+            if rcMax == rc1:
+                x1 = intX
+                y1 = intY
+                rc1 = 0
+                rc1 = self.rcFinder(x1, y1)
+            else:
+                x2 = intX
+                y2 = intY
+                rc2 = 0
+                rc2 = self.rcFinder(x2, y2)
+
+    def lbLineClipping(self, ox1, oy1, ox2, oy2):
+        x1 = ox1
+        y1 = oy1
+        x2 = ox2
+        y2 = oy2
+
+        p1 = -(x2 - x1)
+        p2 = -p1
+        p3 = -(y2 - y1)
+        p4 = -p3
+
+        q1 = x1 - self.cgSubcanvas.xMin
+        q2 = self.cgSubcanvas.xMax - x1
+        q3 = y1 - self.cgSubcanvas.yMin
+        q4 = self.cgSubcanvas.yMax - y1
+
+        ps = [p1, p2, p3, p4]
+        qs = [q1, q2, q3, q4]
+
+        pcond = False
+        qcond = False
+        for p in ps:
+            if p == 0:
+                pcond = True
+                break
+        if pcond:
+            for q in qs:
+                if q < 0:
+                    qcond = True
+        if qcond:
+            return (False, 0, 0, 0, 0)
+        
+        negs = []
+        for i in range(4):
+            if ps[i] < 0:
+                negs.append((ps[i], i))
+
+        poss = []
+        for i in range(4):
+            if ps[i] > 0:
+                poss.append((ps[i], i))
+
+        rns = []
+        for neg in negs:
+            rns.append(qs[neg[1]]/neg[0])
+
+        rps = []
+        for pos in poss:
+            rps.append(qs[pos[1]]/pos[0])
+
+        u1 = max(0, max(rns))
+        u2 = min(1, min(rps))
+
+        if u1 > u2:
+            return (False, 0, 0, 0, 0)
+        
+        ix1 = x1 + u1 * p2
+        iy1 = y1 + u1 * p4
+
+        ix2 = x1 + u2 * p2
+        iy2 = y1 + u2 * p4
+
+        return (True, ix1, iy1, ix2, iy2)
+    
+    def w_a_get_window_index(self, window_vertices, point, code):
+        x, y = point
+        if x == self.cgSubcanvas.xMax:
+            index = window_vertices.index(
+                ((self.cgSubcanvas.xMax, self.cgSubcanvas.yMin), 0))
+            window_vertices.insert(index, (point, code))
+
+        if x == self.cgSubcanvas.xMin:
+            index = window_vertices.index(
+                ((self.cgSubcanvas.xMin, self.cgSubcanvas.yMax), 0))
+            window_vertices.insert(index, (point, code))
+
+        if y == self.cgSubcanvas.yMax:
+            index = window_vertices.index(
+                ((self.cgSubcanvas.xMax, self.cgSubcanvas.yMax), 0))
+            window_vertices.insert(index, (point, code))
+
+        if y == self.cgSubcanvas.yMin:
+            index = window_vertices.index(
+                ((self.cgSubcanvas.xMin, self.cgSubcanvas.yMin), 0))
+            window_vertices.insert(index, (point, code))
+
+        return window_vertices
+
+
+    def waLimites(self, points):
+            inside = []
+            for p in points:
+                if (p[0] >= self.cgSubcanvas.xMin
+                    and p[1] >= self.cgSubcanvas.yMin) and (
+                    p[0] <= self.cgSubcanvas.xMax
+                    and p[1] <= self.cgSubcanvas.yMax):
+                    inside.append(p)
+
+            return inside
+
+    def Waclippig(self, coordinates):
+        points_inside = self.waLimites(coordinates)
+        if not points_inside:
+            return False, [None]
+        
+        win_vers = [((self.cgSubcanvas.xMin, self.cgSubcanvas.yMax), 0), 
+                    ((self.cgSubcanvas.xMax, self.cgSubcanvas.yMax), 0), 
+                    ((self.cgSubcanvas.xMax, self.cgSubcanvas.yMin), 0), 
+                    ((self.cgSubcanvas.xMin, self.cgSubcanvas.yMin), 0)]
+        obj_vertices = [(list(c), 0) for c in coordinates]
+
+        total_points = len(coordinates)
+        points_inserted = []
+
+        for i in range(total_points):
+            p0 = list(coordinates[i])
+            p1 = list(coordinates[(i + 1) % total_points])
+            
+            np0 = [None, None]
+            np1 = [None, None]
+
+            visivel, np0[0], np0[1], np1[0], np1[1] = self.csLineClipping(
+                p0[0], p0[1], p1[0], p1[1])
+            if visivel:
+                if np1 != p1:
+                    point_idx = obj_vertices.index((p0, 0)) + 1
+                    obj_vertices.insert(point_idx, (np1, 2))
+                    win_vers = self.w_a_get_window_index(win_vers, np1, 2)
+
+                if np0 != p0:
+                    point_idx = obj_vertices.index((p0, 0)) + 1
+                    obj_vertices.insert(point_idx, (np0, 1))
+                    points_inserted.append((np0, 1))
+                    win_vers = self.w_a_get_window_index(win_vers, np0, 1)
+
+    
+        new_polygons = []
+        new_points = []
+        if points_inserted != []:
+            while points_inserted != []:
+                ref = points_inserted.pop(0)
+                rf_p, _ = ref 
+                inside_points = [rf_p]
+                point_idx = obj_vertices.index(ref) + 1
+                new_points.append(ref)
+
+                obj_len = len(obj_vertices)
+                for aux_index in range(obj_len):
+                    (p, c) = obj_vertices[(point_idx + aux_index) % obj_len]
+                    new_points.append((p, c))
+                    inside_points.append(p)
+                    if c != 0:
+                        break 
+
+                ultimo_ponto = new_points[-1]
+                point_idx = win_vers.index(ultimo_ponto)
+                win_len = len(win_vers)
+                for aux_index in range(win_len):
+                    (p, c) = win_vers[(point_idx + aux_index) % win_len]
+                    new_points.append((p, c))
+                    inside_points.append(p)
+                    if c != 0:
+                        break
+
+                new_polygons.append(inside_points)
+            coordinate = new_polygons
+        else:
+            coordinate = [coordinates]
+
+        return True, coordinate
 
     def new_point_window(self):
         new_point_dialog = UiPoint()
@@ -149,6 +455,8 @@ class Ui(QtWidgets.QMainWindow):
             self.objectList.addItem(new_line.name)
             if new_line_dialog.rValue.text() and new_line_dialog.gValue.text() and new_line_dialog.bValue.text():
                 new_line.color = (QtGui.QColor(int(new_line_dialog.rValue.text()), int(new_line_dialog.gValue.text()), int(new_line_dialog.bValue.text()), 255))
+            else:
+                new_line.color = (0,0,0,255)
             self.drawOne(new_line)
 
             self.status.addItem("New Line Added")
@@ -168,6 +476,10 @@ class Ui(QtWidgets.QMainWindow):
             self.objectList.addItem(new_poly.name)
             if new_polygon_dialog.rValue.text() and new_polygon_dialog.gValue.text() and new_polygon_dialog.bValue.text():
                 new_poly.color = (QtGui.QColor(int(new_polygon_dialog.rValue.text()), int(new_polygon_dialog.gValue.text()), int(new_polygon_dialog.bValue.text()), 255))
+            else:
+                new_poly.color = (0,0,0,255)
+            if new_polygon_dialog.fillCheckBox.isChecked():
+                new_poly.filled = True
             self.drawOne(new_poly)
             self.status.addItem("New Polygon Added")
         else:
@@ -484,37 +796,77 @@ class Ui(QtWidgets.QMainWindow):
             self.translation(obj, int(pX), int(pY))
 
     def zoomViewportIn(self):
-        self.cgViewport.xMax += 10
-        self.cgViewport.xMin -= 10
-        self.cgViewport.yMax += 10
-        self.cgViewport.yMin -= 10
-        self.drawAll()
+        if self.cgWindow.xMax - 10 > self.cgWindow.xMin + 10 and self.cgWindow.yMax - 10 > self.cgWindow.yMin + 10:
+            self.cgWindow.xMax -= 10
+            self.cgWindow.xMin += 10
+            self.cgWindow.yMax -= 10
+            self.cgWindow.yMin += 10
+            self.makePPCmatrix()
+            self.applyPPCmatrixWindow()
+            self.drawAll()
 
     def zoomViewportOut(self):
-        self.cgViewport.xMax -= 10
-        self.cgViewport.xMin += 10
-        self.cgViewport.yMax -= 10
-        self.cgViewport.yMin += 10
+        self.cgWindow.xMax += 10
+        self.cgWindow.xMin -= 10
+        self.cgWindow.yMax += 10
+        self.cgWindow.yMin -= 10
+        self.makePPCmatrix()
+        self.applyPPCmatrixWindow()
         self.drawAll()
 
     def panRight(self):
-        self.cgWindow.xMax += 100
-        self.cgWindow.xMin += 100
+        v = [1, 0]
+        ang = np.deg2rad(self.windowAngle)
+        x = np.cos(ang)*v[0] - np.sin(ang)*v[1]
+        y = np.sin(ang)*v[0] + np.cos(ang)*v[1]
+        print([x, y])
+        self.cgWindow.xMax += x * 10
+        self.cgWindow.xMin += x * 10
+        self.cgWindow.yMax += y * 10
+        self.cgWindow.yMin += y * 10
+        self.makePPCmatrix()
+        self.applyPPCmatrixWindow()
         self.drawAll()
 
     def panLeft(self):
-        self.cgWindow.xMax -= 100
-        self.cgWindow.xMin -= 100
+        v = [-1, 0]
+        ang = np.deg2rad(self.windowAngle)
+        x = np.cos(ang)*v[0] - np.sin(ang)*v[1]
+        y = np.sin(ang)*v[0] + np.cos(ang)*v[1]
+        print([x, y])
+        self.cgWindow.xMax += x * 10
+        self.cgWindow.xMin += x * 10
+        self.cgWindow.yMax += y * 10
+        self.cgWindow.yMin += y * 10
+        self.makePPCmatrix()
+        self.applyPPCmatrixWindow()
         self.drawAll()
     
     def panUp(self):
-        self.cgWindow.yMax += 100
-        self.cgWindow.yMin += 100
+        v = [0, 1]
+        ang = np.deg2rad(self.windowAngle)
+        x = np.cos(ang)*v[0] - np.sin(ang)*v[1]
+        y = np.sin(ang)*v[0] + np.cos(ang)*v[1]
+        print([x, y])
+        self.cgWindow.xMax += x * 10
+        self.cgWindow.xMin += x * 10
+        self.cgWindow.yMax += y * 10
+        self.cgWindow.yMin += y * 10
+        self.makePPCmatrix()
+        self.applyPPCmatrixWindow()
         self.drawAll()
 
     def panDown(self):
-        self.cgWindow.yMax -= 100
-        self.cgWindow.yMin -= 100
+        v = [0, -1]
+        ang = np.deg2rad(self.windowAngle)
+        x = np.cos(ang)*v[0] - np.sin(ang)*v[1]
+        y = np.sin(ang)*v[0] + np.cos(ang)*v[1]
+        self.cgWindow.xMax += x * 10
+        self.cgWindow.xMin += x * 10
+        self.cgWindow.yMax += y * 10
+        self.cgWindow.yMin += y * 10
+        self.makePPCmatrix()
+        self.applyPPCmatrixWindow()
         self.drawAll()
 
     def restoreOriginal(self):
@@ -532,4 +884,11 @@ class Ui(QtWidgets.QMainWindow):
 
         self.makePPCmatrix()
         self.applyPPCmatrixWindow()
+        self.drawAll()
+    
+    def loadObjs(self):
+        newObjs = self.descObj.load("teste.obj")
+        for obj in newObjs:
+            self.displayFile.append(obj)
+            self.objectList.addItem(obj.name)
         self.drawAll()

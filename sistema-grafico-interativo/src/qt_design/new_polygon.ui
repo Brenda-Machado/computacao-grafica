@@ -186,6 +186,22 @@
     <string>B</string>
    </property>
   </widget>
+  <widget class="QRadioButton" name="fillCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>320</y>
+     <width>112</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Prenchido</string>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

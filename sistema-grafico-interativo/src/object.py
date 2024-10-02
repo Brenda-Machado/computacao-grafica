@@ -30,3 +30,4 @@ class Wireframe:
     name: str = ""
     color: tuple = (0,0,0)
     type: str = "Polygon"
+    filled = False
