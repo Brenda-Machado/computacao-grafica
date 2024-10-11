@@ -43,19 +43,19 @@ class DescriptorOBJ:
                 except IndexError:
                     pass
         
-        cores = {}
+        colors = {}
         currentMtl = ""
         for e in sequence:
             if e[0] == "newmtl":
-                cores[e[1][0]] = None
+                colors[e[1][0]] = None
                 currentMtl = e[1][0]
             elif e[0] == "Kd":
                 r, g, b = e[1]
                 r = round(float(r) * 255)
                 g = round(float(g) * 255)
                 b = round(float(b) * 255)
-                cores[currentMtl] = (r,g,b)
-        return cores
+                colors[currentMtl] = (r,g,b)
+        return colors
 
     def processObjects(self, sequence):
         commands = {

@@ -7,10 +7,11 @@ Brenda Silva Machado - 21101954
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
-from object import Point, Line, Wireframe
+from object import Point, Line, Wireframe, Curve2D
 from point import UiPoint
 from line import UiLine
 from wireframe import UiPolygon
+from curve import UiCurve
 from container import Container
 from transform import UiTransform
 from rotwindow import UiRotWin
@@ -69,6 +70,7 @@ class Ui(QtWidgets.QMainWindow):
         self.newPoint.clicked.connect(self.new_point_window)
         self.newLine.clicked.connect(self.new_line_window)
         self.newPoligon.clicked.connect(self.new_polygon_window)
+        self.newCurve.clicked.connect(self.new_curve_window)
 
         self.zoomPlus.clicked.connect(self.zoomViewportIn)
         self.zoomMinus.clicked.connect(self.zoomViewportOut)
@@ -163,7 +165,15 @@ class Ui(QtWidgets.QMainWindow):
                 return 
             
             self.painter.drawLine(int(nps[-1][0]), int(nps[-1][1]), int(nps[0][0]), int(nps[0][1]))
-
+        
+        elif object.type == "Curve":
+            ps = []
+            for p in object.points:
+                ps.append(self.viewportTransformation(p))
+            nps = self.curve_clipping(ps)
+            if nps:
+                for i in range(1, len(nps)):
+                    self.painter.drawLine(int(nps[i-1][0]), int(nps[i-1][1]), int(nps[i][0]), int(nps[i][1]))
 
     def drawAll(self):
         self.mainLabel.pixmap().fill(Qt.white)
@@ -419,13 +429,36 @@ class Ui(QtWidgets.QMainWindow):
             coordinate = [coordinates]
 
         return True, coordinate
+    
+    def curve_clipping(self, points):
+        clip_points = []
+        started = False
+        for i in range(1, len(points)):
+            p1 = points[i-1]
+            p2 = points[i]
+
+            x1 = p1[0]
+            y1 = p1[1]
+
+            x2 = p2[0]
+            y2 = p2[1]
+
+            clipped = self.csLineClipping(x1, y1, x2, y2)
+            if clipped[0]:
+                if started == False: started = True
+                clip_points.append((clipped[1], clipped[2]))
+                clip_points.append((clipped[3], clipped[4]))
+            else:
+                if started: break
+
+        return clip_points
 
     def new_point_window(self):
         new_point_dialog = UiPoint()
-        if new_point_dialog.exec_() and new_point_dialog.x_value.text() and new_point_dialog.y_value.text():
+        if new_point_dialog.exec_() and new_point_dialog.xValue.text() and new_point_dialog.yValue.text():
             print("New point")
-            x = int(new_point_dialog.x_value.text())
-            y = int(new_point_dialog.y_value.text())
+            x = int(new_point_dialog.xValue.text())
+            y = int(new_point_dialog.yValue.text())
             new_point = Point(x, y, "Point {}".format(self.indexes[0]))
             self.displayFile.append(new_point)
             self.indexes[0] += 1
@@ -442,13 +475,13 @@ class Ui(QtWidgets.QMainWindow):
 
     def new_line_window(self):
         new_line_dialog = UiLine()
-        if new_line_dialog.exec_() and new_line_dialog.x_value1.text() and new_line_dialog.x_value2.text() and new_line_dialog.y_value1.text() and new_line_dialog.y_value2.text():
+        if new_line_dialog.exec_() and new_line_dialog.xValue1.text() and new_line_dialog.xValue2.text() and new_line_dialog.yValue1.text() and new_line_dialog.yValue2.text():
             print("New line")
             
-            x1 = int(new_line_dialog.x_value1.text())
-            x2 = int(new_line_dialog.x_value2.text())
-            y1 = int(new_line_dialog.y_value1.text())
-            y2 = int(new_line_dialog.y_value2.text())
+            x1 = int(new_line_dialog.xValue1.text())
+            x2 = int(new_line_dialog.xValue2.text())
+            y1 = int(new_line_dialog.yValue1.text())
+            y2 = int(new_line_dialog.yValue2.text())
             new_line = Line(Point(x1, y1, ""), Point(x2, y2, ""), "Line {}".format(self.indexes[1]))
             self.displayFile.append(new_line)
             self.indexes[1] += 1
@@ -485,6 +518,84 @@ class Ui(QtWidgets.QMainWindow):
         else:
             self.status.addItem("Failure! Something is not correct with the polygon")
         self.update()
+    
+    def new_curve_window(self):
+        new_curve_dialog = UiCurve()
+        if new_curve_dialog.exec_() and len(new_curve_dialog.point_list) >= 4 and new_curve_dialog.precision.text():
+            
+            print("New curve")
+            ps = new_curve_dialog.curve_list
+            precisao = float(new_curve_dialog.precision.text())
+            cont = 0
+
+            if new_curve_dialog.c1.isChecked(): cont = 1
+            elif new_curve_dialog.c2.isChecked(): cont = 2
+            elif new_curve_dialog.c3.isChecked(): cont = 3
+            if cont == 0 and len(new_curve_dialog.point_list) % 4 != 0:
+                self.status.addItem("Number of points must be multiple of 4!")
+                print("Number of points must be multiple of 4!")
+                self.update()
+                return
+            elif cont == 1 and (len(new_curve_dialog.point_list) - 4) % 3 != 0:
+                self.status.addItem("Number of points must be 4 plus a multiple of 3!")
+                print("Number of points must be 4 plus a multiple of 3!")
+                self.update()
+                return
+            elif cont == 2 and (len(new_curve_dialog.point_list) - 4) % 2 != 0:
+                self.status.addItem("Number of points must be 4 plus a multiple of 2!")
+                print("Number of points must be 4 plus a multiple of 2!")
+                self.update()
+                return
+
+            curve_points = self.makeCurve(ps, precisao, cont)
+            new_curve = Curve2D(curve_points, "Curva {}".format(self.indexes[2]))
+            self.displayFile.append(new_curve)
+            self.indexes[3] += 1
+            self.objectList.addItem(new_curve.name)
+            if new_curve_dialog.rValue.text() and new_curve_dialog.gValue.text() and new_curve_dialog.bValue.text():
+                new_curve.color = ((int(new_curve_dialog.rValue.text()), int(new_curve_dialog.gValue.text()), int(new_curve_dialog.bValue.text()), 255))
+            else:
+                new_curve.color = (0,0,0,255)
+            self.drawOne(new_curve)
+            self.status.addItem("New Curve Added")
+        else:
+            self.status.addItem("Failure! Something is not correct with the curve")
+        self.update()
+
+    def getBlending(self, t):
+        return [(1 - t) ** 3, 3 * t * ((1 - t) ** 2), 3 * (t ** 2) * (1 - t), t ** 3]
+
+    def makeCurve(self, poly_list, precision, cont):
+        prelistsX = []
+        prelistsY = []
+        newlistsX = []
+        newlistsY = []
+        newCoords = []
+        
+        step = 0
+        if cont == 0: step = 4
+        elif cont == 1: step = 3
+        elif cont == 2: step = 2
+        elif cont == 3: step = 1
+
+        for i in range(3, len(poly_list), step):
+            prelistsX.append([poly_list[i-3].x, poly_list[i-2].x, poly_list[i-1].x, poly_list[i].x])
+            prelistsY.append([poly_list[i-3].y, poly_list[i-2].y, poly_list[i-1].y, poly_list[i].y])
+
+        for i in range(len(prelistsX)):
+            t = 0
+            while t < 1:
+                newlistsX.append(np.dot(self.getBlending(t), prelistsX[i]))
+                newlistsY.append(np.dot(self.getBlending(t), prelistsY[i]))
+                t += precision
+            newlistsX.append(np.dot(self.getBlending(1), prelistsX[i]))
+            newlistsY.append(np.dot(self.getBlending(1), prelistsY[i]))
+        
+        coords = list(zip(newlistsX, newlistsY))
+        ps = []
+        for c in coords:
+            ps.append(Point(c[0], c[1]))
+        return ps
 
     def transform_window(self):
         if self.objectList.currentRow() == -1:
