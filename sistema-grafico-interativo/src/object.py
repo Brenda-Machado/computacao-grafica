@@ -39,3 +39,11 @@ class Curve2D:
     color: tuple = (0,0,0)
     type: str = "Curve"
     filled = False
+
+@dataclass
+class BSplineCurve:
+    points: list[Point]
+    name: str = ""
+    color: tuple = (0, 0, 0)
+    type: str = "Curve"
+    filled = False

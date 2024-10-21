@@ -7,11 +7,12 @@ Brenda Silva Machado - 21101954
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
-from object import Point, Line, Wireframe, Curve2D
+from object import BSplineCurve, Point, Line, Wireframe, Curve2D
 from point import UiPoint
 from line import UiLine
 from wireframe import UiPolygon
 from curve import UiCurve
+from b_curve import UiBCurve
 from container import Container
 from transform import UiTransform
 from rotwindow import UiRotWin
@@ -26,7 +27,7 @@ class Ui(QtWidgets.QMainWindow):
         self.setPainter()
         self.setButtons()
 
-        self.indexes = [1, 1, 1]
+        self.indexes = [1, 1, 1, 1]
         self.displayFile = []
 
         self.vpSize = [0, 0, 400, 400]
@@ -71,6 +72,7 @@ class Ui(QtWidgets.QMainWindow):
         self.newLine.clicked.connect(self.new_line_window)
         self.newPoligon.clicked.connect(self.new_polygon_window)
         self.newCurve.clicked.connect(self.new_curve_window)
+        self.newBSCurve.clicked.connect(self.new_b_curve_window)
 
         self.zoomPlus.clicked.connect(self.zoomViewportIn)
         self.zoomMinus.clicked.connect(self.zoomViewportOut)
@@ -525,7 +527,7 @@ class Ui(QtWidgets.QMainWindow):
             
             print("New curve")
             ps = new_curve_dialog.curve_list
-            precisao = float(new_curve_dialog.precision.text())
+            precision = float(new_curve_dialog.precision.text())
             cont = 0
 
             if new_curve_dialog.c1.isChecked(): cont = 1
@@ -547,13 +549,38 @@ class Ui(QtWidgets.QMainWindow):
                 self.update()
                 return
 
-            curve_points = self.makeCurve(ps, precisao, cont)
+            curve_points = self.makeCurve(ps, precision, cont)
             new_curve = Curve2D(curve_points, "Curva {}".format(self.indexes[2]))
             self.displayFile.append(new_curve)
             self.indexes[3] += 1
             self.objectList.addItem(new_curve.name)
             if new_curve_dialog.rValue.text() and new_curve_dialog.gValue.text() and new_curve_dialog.bValue.text():
                 new_curve.color = ((int(new_curve_dialog.rValue.text()), int(new_curve_dialog.gValue.text()), int(new_curve_dialog.bValue.text()), 255))
+            else:
+                new_curve.color = (0,0,0,255)
+            self.drawOne(new_curve)
+            self.status.addItem("New Curve Added")
+        else:
+            self.status.addItem("Failure! Something is not correct with the curve")
+        self.update()
+    
+    def new_b_curve_window(self):
+        new_b_curve_dialog = UiBCurve()
+        if new_b_curve_dialog.exec_() and len(new_b_curve_dialog.point_list) >= 4 and new_b_curve_dialog.precision.text():
+            
+            print("New B-Spline Curve")
+            ps = new_b_curve_dialog.curve_list
+            precision = float(new_b_curve_dialog.precision.text())
+            
+            curve_points = self.makeBSCurve(ps, precision)
+            for p in curve_points:
+                print(p)
+            new_curve = BSplineCurve(curve_points, "Curve {}".format(self.indexes[2]))
+            self.displayFile.append(new_curve)
+            self.indexes[3] += 1
+            self.objectList.addItem(new_curve.name)
+            if new_b_curve_dialog.rValue.text() and new_b_curve_dialog.gValue.text() and new_b_curve_dialog.bValue.text():
+                new_curve.color = ((int(new_b_curve_dialog.rValue.text()), int(new_b_curve_dialog.gValue.text()), int(new_b_curve_dialog.bValue.text()), 255))
             else:
                 new_curve.color = (0,0,0,255)
             self.drawOne(new_curve)
@@ -596,6 +623,75 @@ class Ui(QtWidgets.QMainWindow):
         for c in coords:
             ps.append(Point(c[0], c[1]))
         return ps
+    
+    def calculate_bspline_param(self, points, precision):
+        MBS = np.array(
+        [
+            [-1 / 6, 1 / 2, -1 / 2, 1 / 6],
+            [1 / 2, -1, 1 / 2, 0],
+            [-1 / 2, 0, 1 / 2, 0],
+            [1 / 6, 2 / 3, 1 / 6, 0],
+        ]
+        )
+
+        GBS_x = []
+        GBS_y = []
+        for point in points:
+            GBS_x.append(point.x)
+            GBS_y.append(point.y)
+
+        GBS_x = np.array([GBS_x]).T 
+        coeff_x = MBS.dot(GBS_x).T[0]
+        aX, bX, cX, dX = coeff_x
+        init_diff_x = [
+               dX,
+                aX * (precision ** 3) + bX * (precision ** 2) + cX * precision,
+                6 * aX * (precision ** 3) + 2 * bX * (precision ** 2),
+                6 * aX * (precision ** 3)
+                    ]
+
+        GBS_y = np.array([GBS_y]).T 
+        coeff_y = MBS.dot(GBS_y).T[0]
+        aY, bY, cY, dY = coeff_y
+        init_diff_y = [
+               dY,
+                aY * (precision ** 3) + bY * (precision ** 2) + cY * precision,
+                6 * aY * (precision ** 3) + 2 * bY * (precision ** 2),
+                6 * aY * (precision ** 3)
+                    ]
+        return init_diff_x, init_diff_y
+
+    def makeBSCurve(self, polyList, precision):
+        spline_points = []
+        iterations = int(1/precision)
+        num_points = len(polyList)
+        min_points = 4 
+
+        for i in range(0, num_points):
+            upper_bound = i + min_points
+
+            if upper_bound > num_points:
+                break
+            points = polyList[i:upper_bound]
+
+            
+            delta_x, delta_y = self.calculate_bspline_param(points, precision)
+            x = delta_x[0]
+            y = delta_y[0]
+
+            spline_points.append(Point(x, y))
+            for _ in range(0, iterations):
+                x += delta_x[1]
+                delta_x[1] += delta_x[2] 
+                delta_x[2] += delta_x[3]
+                
+                y += delta_y[1]
+                delta_y[1] += delta_y[2] 
+                delta_y[2] += delta_y[3]
+
+                spline_points.append(Point(x, y))
+
+        return spline_points
 
     def transform_window(self):
         if self.objectList.currentRow() == -1:

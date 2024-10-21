@@ -68,7 +68,7 @@
     <string>Y</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="x_value">
+  <widget class="QLineEdit" name="xValue">
    <property name="geometry">
     <rect>
      <x>50</x>
@@ -78,7 +78,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLineEdit" name="y_value">
+  <widget class="QLineEdit" name="yValue">
    <property name="geometry">
     <rect>
      <x>50</x>

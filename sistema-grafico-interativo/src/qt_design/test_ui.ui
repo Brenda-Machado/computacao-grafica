@@ -347,7 +347,20 @@
      </rect>
     </property>
     <property name="text">
-     <string>+ Curva</string>
+     <string>+ Curve</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="newBSCurve">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>220</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>+ B-Spline Curve</string>
     </property>
    </widget>
   </widget>
@@ -357,7 +370,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>18</height>
     </rect>
    </property>
   </widget>
