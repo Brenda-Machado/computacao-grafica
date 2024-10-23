@@ -7,7 +7,7 @@ Brenda Silva Machado - 21101954
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
-from object import BSplineCurve, Point, Line, Wireframe, Curve2D
+from object import BSplineCurve, Point, Line, Wireframe, Curve2D, Point3D, Object3D
 from point import UiPoint
 from line import UiLine
 from wireframe import UiPolygon
@@ -17,6 +17,9 @@ from container import Container
 from transform import UiTransform
 from rotwindow import UiRotWin
 from descriptorobj import DescriptorOBJ
+from object_3d import UiObject3D
+from point_3d import UiPoint3D
+from transform_3d import UiTransform3D
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
@@ -27,12 +30,13 @@ class Ui(QtWidgets.QMainWindow):
         self.setPainter()
         self.setButtons()
 
-        self.indexes = [1, 1, 1, 1]
+        self.indexes = [1, 1, 1, 1, 1, 1, 1]
         self.displayFile = []
 
         self.vpSize = [0, 0, 400, 400]
         self.wSize = [0, 0, 400, 300]
-        self.windowAngle = 0
+        self.windowAngle = [0,0,0]
+        self.projection = "Ortogonal"
         
         self.cgViewport = Container(self.vpSize[0], self.vpSize[1], self.vpSize[2], self.vpSize[3])
         self.cgWindow = Container(self.wSize[0], self.wSize[1], self.wSize[2], self.wSize[3])
@@ -45,10 +49,17 @@ class Ui(QtWidgets.QMainWindow):
                                 [0, 0, 0],
                                 [0, 0, 0]
                             ]
+
+        self.ppcMatrix3D =      [   [0, 0, 0, 0],
+                                    [0, 0, 0, 0],
+                                    [0, 0, 0, 0],
+                                    [0, 0, 0, 0]
+                                ]
         
         self.makePPCmatrix()
         self.applyPPCmatrixWindow()
         self.drawBorder()
+        # self.cube_test()
 
     def viewportTransformation(self, point):
         xvp = (point.cn_x - self.cgWindowPPC.xMin)/(self.cgWindowPPC.xMax - self.cgWindowPPC.xMin) * (self.cgViewport.xMax - self.cgViewport.xMin) 
@@ -73,6 +84,8 @@ class Ui(QtWidgets.QMainWindow):
         self.newPoligon.clicked.connect(self.new_polygon_window)
         self.newCurve.clicked.connect(self.new_curve_window)
         self.newBSCurve.clicked.connect(self.new_b_curve_window)
+        self.newPoint3D.clicked.connect(self.new_point_3d_window)
+        self.newObject3D.clicked.connect(self.new_object_3d_window)
 
         self.zoomPlus.clicked.connect(self.zoomViewportIn)
         self.zoomMinus.clicked.connect(self.zoomViewportOut)
@@ -105,18 +118,24 @@ class Ui(QtWidgets.QMainWindow):
         self.painter.drawLine(polygon[0], polygon[2])
         self.painter.drawLine(polygon[1], polygon[3])
         self.painter.drawLine(polygon[2], polygon[3])
-
+    
     def drawOne(self, object):
-        self.applyPPCmatrixOne(object)
         self.pen = QtGui.QPen(QtGui.QColor(object.color[0], object.color[1], object.color[2], 255))
         self.pen.setWidth(5)
         self.painter.setPen(self.pen)
+        
+        if object.dimension == 2:
+            self.drawOne2D(object)
+        else:
+            self.drawOne3D(object)
+
+    def drawOne2D(self, object):
+        self.applyPPCmatrixOne(object)
 
         if object.type == "Point":
             (x, y) = self.viewportTransformation(object)
             if self.pointClipping(x,y):
                 self.painter.drawPoint(x, y)
-            self.painter.drawPoint(x, y)
 
         elif object.type == "Line":
             (x1, y1) = self.viewportTransformation(object.p1)
@@ -176,6 +195,35 @@ class Ui(QtWidgets.QMainWindow):
             if nps:
                 for i in range(1, len(nps)):
                     self.painter.drawLine(int(nps[i-1][0]), int(nps[i-1][1]), int(nps[i][0]), int(nps[i][1]))
+    
+    def drawOne3D(self, object):
+        self.applyPPCmatrixOne(object)
+        
+        if object.type == "Point3D":
+            (x, y) = self.viewportTransformation(object)
+            if self.pointClipping(x,y):
+                self.painter.drawPoint(x, y)
+                
+        elif object.type == "Object3D":
+            ps = []
+            for p in object.points:
+                ps.append(self.viewportTransformation(p))
+
+            nedges = []
+
+            for e in object.edges:
+                x1 = ps[e[0]][0]
+                y1 = ps[e[0]][1]
+                x2 = ps[e[1]][0]
+                y2 = ps[e[1]][1]
+                ok, nx1, ny1, nx2, ny2 = self.csLineClipping(x1, y1, x2, y2)
+                
+                if ok:
+                    nedges.append(((nx1, ny1),(nx2, ny2)))
+
+            for (p1, p2) in nedges:
+                self.painter.drawLine(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1]))
+        
 
     def drawAll(self):
         self.mainLabel.pixmap().fill(Qt.white)
@@ -588,6 +636,57 @@ class Ui(QtWidgets.QMainWindow):
         else:
             self.status.addItem("Failure! Something is not correct with the curve")
         self.update()
+    
+    def new_point_3d_window(self):
+        new_point_dialog = UiPoint3D()
+        if new_point_dialog.exec_() and (
+            new_point_dialog.xValue.text() and 
+            new_point_dialog.yValue.text() and
+            new_point_dialog.zValue.text()):
+            
+            x = int(new_point_dialog.xValue.text())
+            y = int(new_point_dialog.yValue.text())
+            z = int(new_point_dialog.zValue.text())
+            
+            new_point = Point3D(x, y, z, "Point 3D{}".format(self.indexes[5]), 0, 0)
+            self.displayFile.append(new_point)
+            self.indexes[5] += 1
+            self.objectList.addItem(new_point.name)
+            if new_point_dialog.rValue.text() and new_point_dialog.gValue.text() and new_point_dialog.bValue.text():
+                new_point.color = (int(new_point_dialog.rValue.text()), int(new_point_dialog.gValue.text()), int(new_point_dialog.bValue.text()), 255)
+            else:
+                new_point.color = (0,0,0,255)
+            self.drawOne(new_point)
+
+            self.status.addItem("New Point 3D Added")
+        else:
+            self.status.addItem("Failure! Something is not correct with the point")
+
+        self.update()
+        
+    def new_object_3d_window(self):
+        new_object_window = UiObject3D()
+        if new_object_window.exec_() and new_object_window.poly_list and new_object_window.edge_list:
+            new_object = Object3D(new_object_window.poly_list, 
+                               new_object_window.edge_list,
+                               "Polígono {}".format(self.indexes[2]))
+            
+            self.displayFile.append(new_object)
+            self.indexes[2] += 1
+            self.objectList.addItem(new_object.name)
+
+            if new_object_window.rValue.text() and new_object_window.gValue.text() and new_object_window.bValue.text():
+                new_object.color = ((int(new_object_window.rValue.text()), int(new_object_window.gValue.text()), int(new_object_window.bValue.text()), 255))
+            else:
+                new_object.color = (0,0,0,255)
+
+            self.drawOne(new_object)
+
+            self.status.addItem("New Object 3D Added")
+        else:
+            self.status.addItem("Failure! Something is not correct with the polygon")
+
+        self.update()
 
     def getBlending(self, t):
         return [(1 - t) ** 3, 3 * t * ((1 - t) ** 2), 3 * (t ** 2) * (1 - t), t ** 3]
@@ -661,10 +760,10 @@ class Ui(QtWidgets.QMainWindow):
                     ]
         return init_diff_x, init_diff_y
 
-    def makeBSCurve(self, polyList, precision):
+    def makeBSCurve(self, poly_list, precision):
         spline_points = []
         iterations = int(1/precision)
-        num_points = len(polyList)
+        num_points = len(poly_list)
         min_points = 4 
 
         for i in range(0, num_points):
@@ -672,7 +771,7 @@ class Ui(QtWidgets.QMainWindow):
 
             if upper_bound > num_points:
                 break
-            points = polyList[i:upper_bound]
+            points = poly_list[i:upper_bound]
 
             
             delta_x, delta_y = self.calculate_bspline_param(points, precision)
@@ -698,6 +797,12 @@ class Ui(QtWidgets.QMainWindow):
             self.status.addItem("Error: you need to select an object.")
             return
 
+        if self.displayFile[self.objectList.currentRow()].dimension == 2:
+            self.transform2D()
+        else:
+            self.transform3D()
+    
+    def transform2D(self):
         transform_dialog = UiTransform()
         if transform_dialog.exec_():
             if transform_dialog.transX.text() or transform_dialog.transY.text():
@@ -737,7 +842,6 @@ class Ui(QtWidgets.QMainWindow):
 
             if transform_dialog.rot_angulo.text():
                 obj = self.displayFile[self.objectList.currentRow()]
-                print(obj.name)
                 angle = int(transform_dialog.rot_angulo.text())
                 self.rotation(obj, angle, 
                              transform_dialog.rotOrigem.isChecked(), 
@@ -748,6 +852,81 @@ class Ui(QtWidgets.QMainWindow):
                 self.status.addItem(obj.name + " suceeded on rotation.")
                 self.drawAll()
                 self.status.addItem(obj.name + " suceeded on transformation")
+
+    def transforma3D(self):
+        transform_dialog = UiTransform3D()
+        if transform_dialog.exec_():
+            if transform_dialog.transX.text() or transform_dialog.transY.text() or transform_dialog.transZ.text():
+                obj = self.displayFile[self.objectList.currentRow()]
+                if transform_dialog.transX.text():
+                    Dx = int(transform_dialog.transX.text())
+                else:
+                    Dx = 0
+
+                if transform_dialog.transY.text():
+                    Dy = int(transform_dialog.transY.text())
+                else:
+                    Dy = 0
+                    
+                if transform_dialog.transZ.text():
+                    Dz = int(transform_dialog.transZ.text())
+                else:
+                    Dz = 0
+
+                self.translation3D(obj, Dx, Dy, Dz)
+                self.status.addItem(obj.name + " suceeded on translation.")
+                self.drawAll()
+
+            if transform_dialog.escX.text() or transform_dialog.escY.text() or transform_dialog.escZ.text():
+                obj = self.displayFile[self.objectList.currentRow()]
+
+                if transform_dialog.escX.text():
+                    Sx = int(transform_dialog.escX.text())
+                else:
+                    Sx = 1
+
+                if transform_dialog.escY.text():
+                    Sy = int(transform_dialog.escY.text())
+                else:
+                    Sy = 1
+                    
+                if transform_dialog.escZ.text():
+                    Sz = int(transform_dialog.escZ.text())
+                else:
+                    Sz = 1
+
+                self.escalation3D(obj, Sx, Sy, Sz)
+                self.status.addItem(obj.name + " suceeded on escalation.")
+                self.drawAll()
+
+            if transform_dialog.rotX.text() or transform_dialog.rotY.text() or transform_dialog.rotZ.text():
+                obj = self.displayFile[self.objectList.currentRow()]
+                
+                if transform_dialog.rotX.text():
+                    Rx = int(transform_dialog.rotX.text())
+                else:
+                    Rx = 0
+                    
+                if transform_dialog.rotY.text():
+                    Ry = int(transform_dialog.rotY.text())
+                else:
+                    Ry = 0
+                    
+                if transform_dialog.rotZ.text():
+                    Rz = int(transform_dialog.rotZ.text())
+                else:
+                    Rz = 0
+                    
+                self.rotation3D(obj, Rx, Ry, Rz, 
+                             transform_dialog.rotOrigem.isChecked(), 
+                             transform_dialog.rotObject.isChecked(),
+                             transform_dialog.rotPoint.isChecked(),
+                             transform_dialog.rotPointX.text(),
+                             transform_dialog.rotPointY.text(),
+                             transform_dialog.rotPointZ.text())
+                self.status.addItem(obj.name + " suceeded on rotation.")
+                self.drawAll()
+                self.status.addItem(obj.name + " duceeded on translation.")
 
     def run_window(self):
         rotDialog = UiRotWin()
@@ -787,15 +966,18 @@ class Ui(QtWidgets.QMainWindow):
         width = self.cgWindow.xMax - self.cgWindow.xMin
         height = self.cgWindow.yMax - self.cgWindow.yMin
         center = self.find_window_center()
+        
         matTrans =  [   [1, 0, 0],
                         [0, 1, 0],
                         [-center[0], -center[1], 1]
                     ]
 
-        ang = np.deg2rad(self.windowAngle)
+        angZ = np.deg2rad(self.windowAngle[2])
+        angX = np.deg2rad(self.windowAngle[0])
+        angY = np.deg2rad(self.windowAngle[1])
 
-        matRot =    [   [np.cos(ang), -np.sin(ang), 0],
-                        [np.sin(ang), np.cos(ang), 0],
+        matRot =    [   [np.cos(angZ), -np.sin(angZ), 0],
+                        [np.sin(angZ), np.cos(angZ), 0],
                         [0, 0, 1]
                     ]
         
@@ -807,6 +989,43 @@ class Ui(QtWidgets.QMainWindow):
         
         matPPC = np.dot(np.dot(matTrans, matRot), matScale)
         self.ppcMatrix = matPPC
+        
+        matTrans3D =  [   [1, 0, 0, 0],
+                        [0, 1, 0, 0],
+                        [0, 0, 1, 0],
+                        [-center[0], -center[1], 1, 1]
+                    ]
+
+        angZ = np.deg2rad(self.windowAngle[2])
+        angX = np.deg2rad(self.windowAngle[0])
+        angY = np.deg2rad(self.windowAngle[1])
+
+        Rx = [  [1, 0, 0, 0],
+                    [0, np.cos(angX), np.sin(angX), 0],
+                    [0, -np.sin(angX), np.cos(angX), 0],
+                    [0, 0, 0, 1],
+                ]
+        Ry = [  [np.cos(angY), 0, -np.sin(angY), 0],
+                [0, 1, 0, 0],
+                [np.sin(angY), 0, np.cos(angY), 0],
+                [0, 0, 0, 1],
+            ]
+        Rz = [  [np.cos(angZ), np.sin(angZ), 0, 0],
+                [-np.sin(angZ), np.cos(angZ), 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1],
+            ]
+        
+        matRot3D = np.dot(np.dot(Rx, Ry), Rz)
+        
+        matScale3D =  [   [2/width,   0,          0, 0],
+                        [0,         2/height,   0, 0],
+                        [0,         0,          1, 0],
+                        [0 , 0, 0 , 1]
+                    ]
+        
+        matPPC3D = np.dot(np.dot(matTrans3D, matRot3D), matScale3D)
+        self.ppcMatrix3D = matPPC3D
 
     def applyPPCmatrixOne(self, obj):
         if obj.type == "Point":
@@ -831,6 +1050,19 @@ class Ui(QtWidgets.QMainWindow):
                 (X,Y,W) = np.matmul(P, self.ppcMatrix)
                 p.cn_x = X
                 p.cn_y = Y
+        elif obj.type == "Point3D":
+            P = [obj.x, obj.y, obj.z, 1]
+            (X,Y,Z,W) = np.dot(P, self.ppcMatrix3D)
+            obj.cn_x = X
+            obj.cn_y = Y
+            obj.cn_z = Z
+        elif obj.type == "Object3D":
+            for p in obj.points:
+                P = (p.x, p.y, p.z, 1)
+                (X,Y,Z, W) = np.matmul(P, self.ppcMatrix3D)
+                p.cn_x = X
+                p.cn_y = Y
+                p.cn_z = Z
 
     def applyPPCmatrixAll(self):
         for obj in self.displayFile:
@@ -895,7 +1127,33 @@ class Ui(QtWidgets.QMainWindow):
                 P = (p.x, p.y, 1)
                 (X,Y,W) = np.matmul(P, T)
                 p.x = X
-                p.y = Y 
+                p.y = Y
+    
+    def translation3D(self, obj, Dx, Dy, Dz):
+        if obj.type == "Point3D":
+            P = [obj.x, obj.y, obj.z, 1]
+            T = [   [1, 0, 0, 0],
+                    [0, 1, 0, 0],
+                    [0, 0, 1, 0],
+                    [Dx, Dy, Dz, 1]
+                ]
+            (X,Y,Z, _) = np.matmul(P, T)
+            obj.x = X
+            obj.y = Y
+            obj.z = Z
+
+        elif obj.type == "Object3D":
+            T = [   [1, 0, 0, 0],
+                    [0, 1, 0, 0],
+                    [0, 0, 1, 0],
+                    [Dx, Dy, Dz, 1]
+                ]
+            for p in obj.points:
+                P = (p.x, p.y, p.z, 1)
+                (X,Y,Z, _) = np.matmul(P, T)
+                p.x = X
+                p.y = Y
+                p.z = Z
     
     def loadObjs(self):
         newObjs = self.descObj.load("test.obj")
@@ -905,7 +1163,7 @@ class Ui(QtWidgets.QMainWindow):
         self.drawAll()
 
     def escalation(self, obj, Sx, Sy):
-        centroInicial = self.find_center(obj)
+        initial_center = self.find_center(obj)
         
         if obj.type == "Point":
             P = [obj.x, obj.y, 1]
@@ -932,7 +1190,7 @@ class Ui(QtWidgets.QMainWindow):
             obj.p2.y = Y2
 
         elif obj.type == "Polygon":
-            centroInicial = self.find_center(obj)
+            initial_center = self.find_center(obj)
 
             T = [   [Sx, 0, 0],
                     [0, Sy, 0],
@@ -945,8 +1203,41 @@ class Ui(QtWidgets.QMainWindow):
                 p.y = Y 
 
         final_center = self.find_center(obj)
-        dist = (centroInicial[0] - final_center[0], centroInicial[1] - final_center[1])
+        dist = (initial_center[0] - final_center[0], initial_center[1] - final_center[1])
         self.translation(obj, dist[0], dist[1])
+    
+    def escalonamento3D(self, obj, Sx, Sy, Sz):
+        initial_center = self.find_center(obj)
+        if obj.type == "Point3D":
+            P = [obj.x, obj.y, obj.z, 1]
+            T = [   [Sx, 0, 0, 0],
+                    [0, Sy, 0, 0],
+                    [0, 0, Sz, 0],
+                    [0, 0, 0, 1]
+                ]
+            (X,Y,Z,_) = np.matmul(P, T)
+            obj.x = X
+            obj.y = Y
+            obj.z = Z
+        
+        elif obj.type == "Object3D":
+            initial_center = self.find_center(obj)
+
+            T = [   [Sx, 0, 0, 0],
+                    [0, Sy, 0, 0],
+                    [0, 0, Sz, 0],
+                    [0, 0, 0, 1]
+                ]
+            for p in obj.points:
+                P = (p.x, p.y, p.z, 1)
+                (X,Y,Z,_) = np.matmul(P, T)
+                p.x = X
+                p.y = Y
+                p.z = Z
+
+        final_center = self.find_center(obj)
+        dist = (initial_center[0] - final_center[0], initial_center[1] - final_center[1], initial_center[2] - final_center[2])
+        self.translation3D(obj, dist[0], dist[1], dist[2])
 
     def rotation(self, obj, degree, toOrigin, toObject, toPoint, pX, pY):
         initial_center = self.find_center(obj)
@@ -1001,6 +1292,73 @@ class Ui(QtWidgets.QMainWindow):
             self.translation(obj, initial_center[0], initial_center[1])
         elif toPoint:
             self.translation(obj, int(pX), int(pY))
+    
+    def rotacao3D(self, obj, rotX, rotY, rotZ, toOrigin, toObject, toPoint, pX, pY, pZ):
+        rotX = np.deg2rad(rotX)
+        rotY = np.deg2rad(rotY)
+        rotZ = np.deg2rad(rotZ)
+        initial_center = self.find_center(obj)
+        if toObject:
+            self.translation3D(obj, -initial_center[0], -initial_center[1], -initial_center[2])
+        elif toPoint:
+            if not pX or not pY or not pZ:
+                self.status.addItem("Error: rotation point was not set.")
+                return
+            self.translation(obj, -int(pX), -int(pY), -int(pZ))
+
+        if obj.type == "Point":
+            P = [obj.x, obj.y, obj.z, 1]
+            Tx = [  [1, 0, 0, 0],
+                    [0, np.cos(rotX), np.sin(rotX), 0],
+                    [0, -np.sin(rotX), np.cos(rotX), 0],
+                    [0, 0, 0, 1],
+                ]
+            Ty = [  [np.cos(rotY), 0, -np.sin(rotY), 0],
+                    [0, 1, 0, 0],
+                    [np.sin(rotY), 0, np.cos(rotY), 0],
+                    [0, 0, 0, 1],
+                ]
+            Tz = [  [np.cos(rotZ), np.sin(rotZ), 0, 0],
+                    [-np.sin(rotZ), np.cos(rotZ), 0, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1],
+                ]
+            R = np.matmul(P, Tx)
+            R = np.matmul(R, Ty)
+            (X, Y, Z, _) = np.matmul(R, Tz)
+            obj.x = X
+            obj.y = Y
+            obj.z = Z
+
+        elif obj.type == "Object3D":
+            Tx = [  [1, 0, 0, 0],
+                    [0, np.cos(rotX), np.sin(rotX), 0],
+                    [0, -np.sin(rotX), np.cos(rotX), 0],
+                    [0, 0, 0, 1],
+                ]
+            Ty = [  [np.cos(rotY), 0, -np.sin(rotY), 0],
+                    [0, 1, 0, 0],
+                    [np.sin(rotY), 0, np.cos(rotY), 0],
+                    [0, 0, 0, 1],
+                ]
+            Tz = [  [np.cos(rotZ), np.sin(rotZ), 0, 0],
+                    [-np.sin(rotZ), np.cos(rotZ), 0, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1],
+                ]
+            for p in obj.points:
+                P = (p.x, p.y, p.z, 1)
+                R = np.matmul(P, Tx)
+                R = np.matmul(R, Ty)
+                (X, Y, Z, _) = np.matmul(R, Tz)
+                p.x = X
+                p.y = Y 
+                p.z = Z
+
+        if toObject:
+            self.translation3D(obj, initial_center[0], initial_center[1], initial_center[2])
+        elif toPoint:
+            self.translation3D(obj, int(pX), int(pY), int(pZ))
 
     def zoomViewportIn(self):
         if self.cgWindow.xMax - 10 > self.cgWindow.xMin + 10 and self.cgWindow.yMax - 10 > self.cgWindow.yMin + 10:
@@ -1087,7 +1445,7 @@ class Ui(QtWidgets.QMainWindow):
         self.cgWindow.xMax = self.wSize[2]
         self.cgWindow.yMax = self.wSize[3]
         
-        self.windowAngle = 0
+        self.windowAngle = [0, 0, 0]
 
         self.makePPCmatrix()
         self.applyPPCmatrixWindow()
@@ -1099,3 +1457,37 @@ class Ui(QtWidgets.QMainWindow):
             self.displayFile.append(obj)
             self.objectList.addItem(obj.name)
         self.drawAll()
+    
+    def cube_test(self):
+        ps = []
+        ps.append(Point3D(100, 100, 100))
+        ps.append(Point3D(200, 100, 100))
+        ps.append(Point3D(200, 200, 100))
+        ps.append(Point3D(100, 200, 100))
+        
+        ps.append(Point3D(100, 100, 200))
+        ps.append(Point3D(200, 100, 200))
+        ps.append(Point3D(200, 200, 200))
+        ps.append(Point3D(100, 200, 200))
+        
+        edges = []
+        edges.append((0, 1))
+        edges.append((1, 2))
+        edges.append((2, 3))
+        edges.append((3, 0))
+        
+        edges.append((4, 5))
+        edges.append((5, 6))
+        edges.append((6, 7))
+        edges.append((7, 4))
+        
+        edges.append((0, 4))
+        edges.append((1, 5))
+        edges.append((2, 6))
+        edges.append((3, 7))
+        
+        cubotest = Object3D(ps, edges, "Test")
+        self.displayFile.append(cubotest)
+        self.objectList.addItem(cubotest.name)
+        self.drawOne(cubotest)
+        self.update()
