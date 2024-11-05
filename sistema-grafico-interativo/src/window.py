@@ -36,7 +36,8 @@ class Ui(QtWidgets.QMainWindow):
         self.vpSize = [0, 0, 400, 400]
         self.wSize = [0, 0, 400, 300]
         self.windowAngle = [0,0,0]
-        self.projection = "Ortogonal"
+        self.projmode = "ortogonal"
+        self.perspd = 100
         
         self.cgViewport = Container(self.vpSize[0], self.vpSize[1], self.vpSize[2], self.vpSize[3])
         self.cgWindow = Container(self.wSize[0], self.wSize[1], self.wSize[2], self.wSize[3])
@@ -84,6 +85,7 @@ class Ui(QtWidgets.QMainWindow):
         self.newPoligon.clicked.connect(self.new_polygon_window)
         self.newCurve.clicked.connect(self.new_curve_window)
         self.newBSCurve.clicked.connect(self.new_b_curve_window)
+
         self.newPoint3D.clicked.connect(self.new_point_3d_window)
         self.newObject3D.clicked.connect(self.new_object_3d_window)
 
@@ -99,6 +101,10 @@ class Ui(QtWidgets.QMainWindow):
         self.rotWindowButton.clicked.connect(self.run_window)
         self.RestoreButtom.clicked.connect(self.restoreOriginal)
         self.loadButton.clicked.connect(self.loadObjs)
+
+        self.perspSlider.valueChanged.connect(self.perspChange)
+        self.projOrt.toggled.connect(self.drawAll)
+        self.projPersp.toggled.connect(self.drawAll)
 
     def drawBorder(self, color=Qt.red):
         self.pen = QtGui.QPen(color)
@@ -153,8 +159,10 @@ class Ui(QtWidgets.QMainWindow):
         elif object.type == "Polygon":
             ps = []
             fill_p = []
+
             for p in object.points:
                 ps.append(self.viewportTransformation(p))
+
             ok, newobj = self.Waclippig(ps)
             nps = newobj[0]
             
@@ -205,6 +213,9 @@ class Ui(QtWidgets.QMainWindow):
                 self.painter.drawPoint(x, y)
                 
         elif object.type == "Object3D":
+            if (any(p.z < 0 for p in object.points)): 
+                return
+            
             ps = []
             for p in object.points:
                 ps.append(self.viewportTransformation(p))
@@ -330,6 +341,7 @@ class Ui(QtWidgets.QMainWindow):
 
         pcond = False
         qcond = False
+
         for p in ps:
             if p == 0:
                 pcond = True
@@ -505,19 +517,25 @@ class Ui(QtWidgets.QMainWindow):
 
     def new_point_window(self):
         new_point_dialog = UiPoint()
+
         if new_point_dialog.exec_() and new_point_dialog.xValue.text() and new_point_dialog.yValue.text():
-            print("New point")
+            
             x = int(new_point_dialog.xValue.text())
             y = int(new_point_dialog.yValue.text())
-            new_point = Point(x, y, "Point {}".format(self.indexes[0]))
+            new_point = Point(x, y, "Point {}".format(self.indexes[0]), 0, 0)
             self.displayFile.append(new_point)
             self.indexes[0] += 1
             self.objectList.addItem(new_point.name)
+
             if new_point_dialog.rValue.text() and new_point_dialog.gValue.text() and new_point_dialog.bValue.text():
-                new_point.color = (QtGui.QColor(int(new_point_dialog.rValue.text()), int(new_point_dialog.gValue.text()), int(new_point_dialog.bValue.text()), 255))
+                new_point.color = (int(new_point_dialog.rValue.text()), int(new_point_dialog.gValue.text()), int(new_point_dialog.bValue.text()), 255)
+            else:
+                new_point.color = (0,0,0,255)
+
             self.drawOne(new_point)
 
             self.status.addItem("New Point Added")
+
         else:
             self.status.addItem("Failure! Something is not correct with the point")
 
@@ -526,20 +544,22 @@ class Ui(QtWidgets.QMainWindow):
     def new_line_window(self):
         new_line_dialog = UiLine()
         if new_line_dialog.exec_() and new_line_dialog.xValue1.text() and new_line_dialog.xValue2.text() and new_line_dialog.yValue1.text() and new_line_dialog.yValue2.text():
-            print("New line")
             
             x1 = int(new_line_dialog.xValue1.text())
             x2 = int(new_line_dialog.xValue2.text())
             y1 = int(new_line_dialog.yValue1.text())
             y2 = int(new_line_dialog.yValue2.text())
+
             new_line = Line(Point(x1, y1, ""), Point(x2, y2, ""), "Line {}".format(self.indexes[1]))
             self.displayFile.append(new_line)
             self.indexes[1] += 1
             self.objectList.addItem(new_line.name)
+
             if new_line_dialog.rValue.text() and new_line_dialog.gValue.text() and new_line_dialog.bValue.text():
-                new_line.color = (QtGui.QColor(int(new_line_dialog.rValue.text()), int(new_line_dialog.gValue.text()), int(new_line_dialog.bValue.text()), 255))
+                new_line.color = (int(new_line_dialog.rValue.text()), int(new_line_dialog.gValue.text()), int(new_line_dialog.bValue.text()), 255)
             else:
                 new_line.color = (0,0,0,255)
+
             self.drawOne(new_line)
 
             self.status.addItem("New Line Added")
@@ -551,36 +571,46 @@ class Ui(QtWidgets.QMainWindow):
     
     def new_polygon_window(self):
         new_polygon_dialog = UiPolygon()
+
         if new_polygon_dialog.exec_() and new_polygon_dialog.point_list:
             print("New polygon")
             new_poly = Wireframe(new_polygon_dialog.poly_list, "Polygon {}".format(self.indexes[2]))
             self.displayFile.append(new_poly)
             self.indexes[2] += 1
             self.objectList.addItem(new_poly.name)
+
             if new_polygon_dialog.rValue.text() and new_polygon_dialog.gValue.text() and new_polygon_dialog.bValue.text():
-                new_poly.color = (QtGui.QColor(int(new_polygon_dialog.rValue.text()), int(new_polygon_dialog.gValue.text()), int(new_polygon_dialog.bValue.text()), 255))
+                new_poly.color = (int(new_polygon_dialog.rValue.text()), int(new_polygon_dialog.gValue.text()), int(new_polygon_dialog.bValue.text()), 255)
             else:
                 new_poly.color = (0,0,0,255)
+
             if new_polygon_dialog.fillCheckBox.isChecked():
                 new_poly.filled = True
+
             self.drawOne(new_poly)
             self.status.addItem("New Polygon Added")
+
         else:
             self.status.addItem("Failure! Something is not correct with the polygon")
+        
         self.update()
     
     def new_curve_window(self):
         new_curve_dialog = UiCurve()
+
         if new_curve_dialog.exec_() and len(new_curve_dialog.point_list) >= 4 and new_curve_dialog.precision.text():
             
-            print("New curve")
             ps = new_curve_dialog.curve_list
             precision = float(new_curve_dialog.precision.text())
             cont = 0
 
-            if new_curve_dialog.c1.isChecked(): cont = 1
-            elif new_curve_dialog.c2.isChecked(): cont = 2
-            elif new_curve_dialog.c3.isChecked(): cont = 3
+            if new_curve_dialog.c1.isChecked(): 
+                cont = 1
+            elif new_curve_dialog.c2.isChecked(): 
+                cont = 2
+            elif new_curve_dialog.c3.isChecked(): 
+                cont = 3
+
             if cont == 0 and len(new_curve_dialog.point_list) % 4 != 0:
                 self.status.addItem("Number of points must be multiple of 4!")
                 print("Number of points must be multiple of 4!")
@@ -602,43 +632,49 @@ class Ui(QtWidgets.QMainWindow):
             self.displayFile.append(new_curve)
             self.indexes[3] += 1
             self.objectList.addItem(new_curve.name)
+
             if new_curve_dialog.rValue.text() and new_curve_dialog.gValue.text() and new_curve_dialog.bValue.text():
                 new_curve.color = ((int(new_curve_dialog.rValue.text()), int(new_curve_dialog.gValue.text()), int(new_curve_dialog.bValue.text()), 255))
             else:
                 new_curve.color = (0,0,0,255)
+
             self.drawOne(new_curve)
             self.status.addItem("New Curve Added")
+
         else:
             self.status.addItem("Failure! Something is not correct with the curve")
+        
         self.update()
     
     def new_b_curve_window(self):
         new_b_curve_dialog = UiBCurve()
+
         if new_b_curve_dialog.exec_() and len(new_b_curve_dialog.point_list) >= 4 and new_b_curve_dialog.precision.text():
             
-            print("New B-Spline Curve")
             ps = new_b_curve_dialog.curve_list
             precision = float(new_b_curve_dialog.precision.text())
-            
             curve_points = self.makeBSCurve(ps, precision)
-            for p in curve_points:
-                print(p)
             new_curve = BSplineCurve(curve_points, "Curve {}".format(self.indexes[2]))
             self.displayFile.append(new_curve)
-            self.indexes[3] += 1
+            self.indexes[4] += 1
             self.objectList.addItem(new_curve.name)
+
             if new_b_curve_dialog.rValue.text() and new_b_curve_dialog.gValue.text() and new_b_curve_dialog.bValue.text():
                 new_curve.color = ((int(new_b_curve_dialog.rValue.text()), int(new_b_curve_dialog.gValue.text()), int(new_b_curve_dialog.bValue.text()), 255))
             else:
                 new_curve.color = (0,0,0,255)
+
             self.drawOne(new_curve)
-            self.status.addItem("New Curve Added")
+            self.status.addItem("New B-Spline Curve Added")
+
         else:
             self.status.addItem("Failure! Something is not correct with the curve")
+        
         self.update()
     
     def new_point_3d_window(self):
         new_point_dialog = UiPoint3D()
+
         if new_point_dialog.exec_() and (
             new_point_dialog.xValue.text() and 
             new_point_dialog.yValue.text() and
@@ -652,13 +688,15 @@ class Ui(QtWidgets.QMainWindow):
             self.displayFile.append(new_point)
             self.indexes[5] += 1
             self.objectList.addItem(new_point.name)
+
             if new_point_dialog.rValue.text() and new_point_dialog.gValue.text() and new_point_dialog.bValue.text():
                 new_point.color = (int(new_point_dialog.rValue.text()), int(new_point_dialog.gValue.text()), int(new_point_dialog.bValue.text()), 255)
             else:
                 new_point.color = (0,0,0,255)
-            self.drawOne(new_point)
 
+            self.drawOne(new_point)
             self.status.addItem("New Point 3D Added")
+
         else:
             self.status.addItem("Failure! Something is not correct with the point")
 
@@ -666,11 +704,9 @@ class Ui(QtWidgets.QMainWindow):
         
     def new_object_3d_window(self):
         new_object_window = UiObject3D()
+
         if new_object_window.exec_() and new_object_window.poly_list and new_object_window.edge_list:
-            new_object = Object3D(new_object_window.poly_list, 
-                               new_object_window.edge_list,
-                               "Polígono {}".format(self.indexes[2]))
-            
+            new_object = Object3D(new_object_window.poly_list, new_object_window.edge_list,"Polygon {}".format(self.indexes[2]))
             self.displayFile.append(new_object)
             self.indexes[2] += 1
             self.objectList.addItem(new_object.name)
@@ -681,8 +717,8 @@ class Ui(QtWidgets.QMainWindow):
                 new_object.color = (0,0,0,255)
 
             self.drawOne(new_object)
-
             self.status.addItem("New Object 3D Added")
+
         else:
             self.status.addItem("Failure! Something is not correct with the polygon")
 
@@ -696,13 +732,16 @@ class Ui(QtWidgets.QMainWindow):
         prelistsY = []
         newlistsX = []
         newlistsY = []
-        newCoords = []
         
         step = 0
-        if cont == 0: step = 4
-        elif cont == 1: step = 3
-        elif cont == 2: step = 2
-        elif cont == 3: step = 1
+        if cont == 0: 
+            step = 4
+        elif cont == 1: 
+            step = 3
+        elif cont == 2: 
+            step = 2
+        elif cont == 3: 
+            step = 1
 
         for i in range(3, len(poly_list), step):
             prelistsX.append([poly_list[i-3].x, poly_list[i-2].x, poly_list[i-1].x, poly_list[i].x])
@@ -772,7 +811,6 @@ class Ui(QtWidgets.QMainWindow):
             if upper_bound > num_points:
                 break
             points = poly_list[i:upper_bound]
-
             
             delta_x, delta_y = self.calculate_bspline_param(points, precision)
             x = delta_x[0]
@@ -804,10 +842,12 @@ class Ui(QtWidgets.QMainWindow):
     
     def transform2D(self):
         transform_dialog = UiTransform()
+
         if transform_dialog.exec_():
+
             if transform_dialog.transX.text() or transform_dialog.transY.text():
                 obj = self.displayFile[self.objectList.currentRow()]
-                print(obj.name)
+
                 if transform_dialog.transX.text():
                     Dx = int(transform_dialog.transX.text())
                 else:
@@ -824,7 +864,6 @@ class Ui(QtWidgets.QMainWindow):
 
             if transform_dialog.escX.text() or transform_dialog.escY.text():
                 obj = self.displayFile[self.objectList.currentRow()]
-                print(obj.name)
 
                 if transform_dialog.escX.text():
                     Sx = int(transform_dialog.escX.text())
@@ -849,15 +888,19 @@ class Ui(QtWidgets.QMainWindow):
                              transform_dialog.rotPoint.isChecked(),
                              transform_dialog.rotPointX.text(),
                              transform_dialog.rotPointY.text())
+                
                 self.status.addItem(obj.name + " suceeded on rotation.")
                 self.drawAll()
                 self.status.addItem(obj.name + " suceeded on transformation")
 
     def transforma3D(self):
         transform_dialog = UiTransform3D()
+
         if transform_dialog.exec_():
+
             if transform_dialog.transX.text() or transform_dialog.transY.text() or transform_dialog.transZ.text():
                 obj = self.displayFile[self.objectList.currentRow()]
+
                 if transform_dialog.transX.text():
                     Dx = int(transform_dialog.transX.text())
                 else:
@@ -930,10 +973,32 @@ class Ui(QtWidgets.QMainWindow):
 
     def run_window(self):
         rotDialog = UiRotWin()
+
         if rotDialog.exec_():
-            if rotDialog.rot_angulo.text():
-                ang = int(rotDialog.rot_angulo.text())
-                self.windowAngle -= ang
+
+            if rotDialog.rotX.text() or rotDialog.rotY.text() or rotDialog.rotZ.text():
+                
+                if (rotDialog.rotX.text()):
+                    angX = int(rotDialog.rotX.text())
+                else:
+                    angX = 0
+
+                self.windowAngle[0] -= angX
+                
+                if (rotDialog.rotY.text()):
+                    angY = int(rotDialog.rotY.text())
+                else:
+                    angY = 0
+
+                self.windowAngle[1] -= angY
+                
+                if (rotDialog.rotZ.text()):
+                    angZ = int(rotDialog.rotZ.text())
+                else:
+                    angZ = 0
+
+                self.windowAngle[2] -= angZ
+                
                 self.makePPCmatrix()
                 self.applyPPCmatrixWindow()
                 self.drawAll()
@@ -957,9 +1022,23 @@ class Ui(QtWidgets.QMainWindow):
             x, y = x//len(obj.points), y//len(obj.points)
             
             return (x, y)
+
+        if obj.type == "Point3D":
+            return (obj.x, obj.y, obj.z)
+        
+        if obj.type == "Object3D":
+            x, y, z = 0, 0, 0
+            for i in obj.points:
+                x += i.x
+                y += i.y
+                z += i.z
+            x, y, z = x//len(obj.points), y//len(obj.points), z//len(obj.points)
+            return(x, y, z)
+
     def find_window_center(self):
         x = (self.cgWindow.xMin + self.cgWindow.xMax)/2
         y = (self.cgWindow.yMin + self.cgWindow.yMax)/2
+
         return (x,y)
 
     def makePPCmatrix(self):
@@ -967,6 +1046,7 @@ class Ui(QtWidgets.QMainWindow):
         height = self.cgWindow.yMax - self.cgWindow.yMin
         center = self.find_window_center()
         
+        #2D
         matTrans =  [   [1, 0, 0],
                         [0, 1, 0],
                         [-center[0], -center[1], 1]
@@ -990,6 +1070,7 @@ class Ui(QtWidgets.QMainWindow):
         matPPC = np.dot(np.dot(matTrans, matRot), matScale)
         self.ppcMatrix = matPPC
         
+        #3D
         matTrans3D =  [   [1, 0, 0, 0],
                         [0, 1, 0, 0],
                         [0, 0, 1, 0],
@@ -1033,6 +1114,7 @@ class Ui(QtWidgets.QMainWindow):
             (X,Y,W) = np.dot(P, self.ppcMatrix)
             obj.cn_x = X
             obj.cn_y = Y
+
         elif obj.type == "Line":
             P1 = [obj.p1.x, obj.p1.y, 1]
             P2 = [obj.p2.x, obj.p2.y, 1]
@@ -1042,23 +1124,36 @@ class Ui(QtWidgets.QMainWindow):
             obj.p1.cn_y = Y1
             obj.p2.cn_x = X2
             obj.p2.cn_y = Y2
-            print("N: {}, {}".format(obj.p1.x, obj.p1.y))
-            print("PPC: {}, {}".format(obj.p1.cn_x, obj.p1.cn_y))
-        elif obj.type == "Polygon":
+
+        elif obj.type == "Polygon" or obj.type == "Curve":
             for p in obj.points:
                 P = (p.x, p.y, 1)
                 (X,Y,W) = np.matmul(P, self.ppcMatrix)
                 p.cn_x = X
                 p.cn_y = Y
-        elif obj.type == "Point3D":
-            P = [obj.x, obj.y, obj.z, 1]
-            (X,Y,Z,W) = np.dot(P, self.ppcMatrix3D)
+
+        elif obj.type == "Point3D": 
+            if self.projPersp.isChecked():
+                nx = obj.x/(obj.z/self.perspd)
+                ny = obj.y/(obj.z/self.perspd)
+                P = (nx, ny, obj.z, 1)
+            else:
+                P = (obj.x, obj.y, obj.z, 1)
+            
+            (X,Y,Z,_) = np.dot(P, self.ppcMatrix3D)
             obj.cn_x = X
             obj.cn_y = Y
             obj.cn_z = Z
+
         elif obj.type == "Object3D":
             for p in obj.points:
-                P = (p.x, p.y, p.z, 1)
+                if self.projPersp.isChecked():
+                    nx = p.x/(p.z/self.perspd)
+                    ny = p.y/(p.z/self.perspd)
+                    P = (nx, ny, p.z, 1)
+                else:
+                    P = (p.x, p.y, p.z, 1)
+                
                 (X,Y,Z, W) = np.matmul(P, self.ppcMatrix3D)
                 p.cn_x = X
                 p.cn_y = Y
@@ -1127,7 +1222,7 @@ class Ui(QtWidgets.QMainWindow):
                 P = (p.x, p.y, 1)
                 (X,Y,W) = np.matmul(P, T)
                 p.x = X
-                p.y = Y
+                p.y = Y 
     
     def translation3D(self, obj, Dx, Dy, Dz):
         if obj.type == "Point3D":
@@ -1240,6 +1335,7 @@ class Ui(QtWidgets.QMainWindow):
         self.translation3D(obj, dist[0], dist[1], dist[2])
 
     def rotation(self, obj, degree, toOrigin, toObject, toPoint, pX, pY):
+        degree = np.deg2rad(degree)
         initial_center = self.find_center(obj)
         
         if toObject:
@@ -1275,9 +1371,6 @@ class Ui(QtWidgets.QMainWindow):
             obj.p2.y = Y2
 
         elif obj.type == "Polygon":
-            print(toOrigin)
-            print(toObject)
-            print(toPoint)
             T = [   [np.cos(degree), -np.sin(degree), 0],
                     [np.sin(degree), np.cos(degree), 0],
                     [0, 0, 1]
@@ -1298,6 +1391,7 @@ class Ui(QtWidgets.QMainWindow):
         rotY = np.deg2rad(rotY)
         rotZ = np.deg2rad(rotZ)
         initial_center = self.find_center(obj)
+
         if toObject:
             self.translation3D(obj, -initial_center[0], -initial_center[1], -initial_center[2])
         elif toPoint:
@@ -1308,6 +1402,7 @@ class Ui(QtWidgets.QMainWindow):
 
         if obj.type == "Point":
             P = [obj.x, obj.y, obj.z, 1]
+
             Tx = [  [1, 0, 0, 0],
                     [0, np.cos(rotX), np.sin(rotX), 0],
                     [0, -np.sin(rotX), np.cos(rotX), 0],
@@ -1384,7 +1479,6 @@ class Ui(QtWidgets.QMainWindow):
         ang = np.deg2rad(self.windowAngle)
         x = np.cos(ang)*v[0] - np.sin(ang)*v[1]
         y = np.sin(ang)*v[0] + np.cos(ang)*v[1]
-        print([x, y])
         self.cgWindow.xMax += x * 10
         self.cgWindow.xMin += x * 10
         self.cgWindow.yMax += y * 10
@@ -1398,7 +1492,6 @@ class Ui(QtWidgets.QMainWindow):
         ang = np.deg2rad(self.windowAngle)
         x = np.cos(ang)*v[0] - np.sin(ang)*v[1]
         y = np.sin(ang)*v[0] + np.cos(ang)*v[1]
-        print([x, y])
         self.cgWindow.xMax += x * 10
         self.cgWindow.xMin += x * 10
         self.cgWindow.yMax += y * 10
@@ -1412,7 +1505,6 @@ class Ui(QtWidgets.QMainWindow):
         ang = np.deg2rad(self.windowAngle)
         x = np.cos(ang)*v[0] - np.sin(ang)*v[1]
         y = np.sin(ang)*v[0] + np.cos(ang)*v[1]
-        print([x, y])
         self.cgWindow.xMax += x * 10
         self.cgWindow.xMin += x * 10
         self.cgWindow.yMax += y * 10
@@ -1458,6 +1550,10 @@ class Ui(QtWidgets.QMainWindow):
             self.objectList.addItem(obj.name)
         self.drawAll()
     
+    def perspChange(self):
+        self.perspd = self.perspSlider.value()
+        self.drawAll()
+    
     def cube_test(self):
         ps = []
         ps.append(Point3D(100, 100, 100))
@@ -1486,8 +1582,8 @@ class Ui(QtWidgets.QMainWindow):
         edges.append((2, 6))
         edges.append((3, 7))
         
-        cubotest = Object3D(ps, edges, "Test")
-        self.displayFile.append(cubotest)
-        self.objectList.addItem(cubotest.name)
-        self.drawOne(cubotest)
+        cube_test = Object3D(ps, edges, "Test")
+        self.displayFile.append(cube_test)
+        self.objectList.addItem(cube_test.name)
+        self.drawOne(cube_test)
         self.update()

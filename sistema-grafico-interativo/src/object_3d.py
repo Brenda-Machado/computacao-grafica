@@ -26,22 +26,25 @@ class UiObject3D(QtWidgets.QDialog):
 
     def new_point_window(self):
         new_point_window_dialog = UiPoint3D()
+
         if new_point_window_dialog.exec_() and new_point_window_dialog.xValue.text() and new_point_window_dialog.yValue.text():
-            print("New Point")
+
             x = int(new_point_window_dialog.xValue.text())
             y = int(new_point_window_dialog.yValue.text())
             z = int(new_point_window_dialog.zValue.text())
-            print(x)
-            print(y)
-            new_point = Point3D(x, y, "")
+
+            new_point = Point3D(x, y, z)
             self.poly_list.append(new_point)
             self.point_list.addItem("New Point Added {},{}".format(x,y))
             self.point_index += 1
+
         self.update()
         
     def new_edge_window(self):
         new_edge_dialog = UiEdge()
+
         if new_edge_dialog.exec_() and new_edge_dialog.p1.text() and new_edge_dialog.p2.text():
+            
             if (int(new_edge_dialog.p1.text()) < 0) or (
                 int(new_edge_dialog.p1.text()) >= len(self.poly_list)): return
             if (int(new_edge_dialog.p2.text()) < 0) or (
