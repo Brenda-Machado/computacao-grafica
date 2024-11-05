@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>762</height>
+    <height>841</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -85,8 +85,8 @@
    <widget class="QPushButton" name="loadButton">
     <property name="geometry">
      <rect>
-      <x>100</x>
-      <y>320</y>
+      <x>110</x>
+      <y>380</y>
       <width>89</width>
       <height>25</height>
      </rect>
@@ -99,7 +99,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>360</y>
+      <y>420</y>
       <width>301</width>
       <height>151</height>
      </rect>
@@ -228,7 +228,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>520</y>
+      <y>580</y>
       <width>151</width>
       <height>81</height>
      </rect>
@@ -351,7 +351,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>320</y>
+      <y>380</y>
       <width>89</width>
       <height>25</height>
      </rect>
@@ -363,10 +363,10 @@
    <widget class="QGroupBox" name="groupBox_4">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>250</y>
-      <width>281</width>
-      <height>61</height>
+      <width>231</width>
+      <height>121</height>
      </rect>
     </property>
     <property name="title">
@@ -375,7 +375,7 @@
     <widget class="QPushButton" name="newPoint3D">
      <property name="geometry">
       <rect>
-       <x>0</x>
+       <x>30</x>
        <y>30</y>
        <width>89</width>
        <height>25</height>
@@ -388,7 +388,7 @@
     <widget class="QPushButton" name="newObject3D">
      <property name="geometry">
       <rect>
-       <x>90</x>
+       <x>120</x>
        <y>30</y>
        <width>89</width>
        <height>25</height>
@@ -398,12 +398,38 @@
       <string>+ Object 3D</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="newbibezier">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>60</y>
+       <width>181</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>+ Bicubic - Bezier</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="newbifd">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>90</y>
+       <width>181</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>+ Bicubic - FD</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QGroupBox" name="groupBox_5">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>610</y>
+      <y>680</y>
       <width>281</width>
       <height>101</height>
      </rect>

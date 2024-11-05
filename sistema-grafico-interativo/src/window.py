@@ -7,6 +7,7 @@ Brenda Silva Machado - 21101954
 import numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
+from functools import reduce
 from object import BSplineCurve, Point, Line, Wireframe, Curve2D, Point3D, Object3D
 from point import UiPoint
 from line import UiLine
@@ -19,6 +20,7 @@ from rotwindow import UiRotWin
 from descriptorobj import DescriptorOBJ
 from object_3d import UiObject3D
 from point_3d import UiPoint3D
+from bezier_curve import UiBezierCurve
 from transform_3d import UiTransform3D
 
 class Ui(QtWidgets.QMainWindow):
@@ -85,6 +87,7 @@ class Ui(QtWidgets.QMainWindow):
         self.newPoligon.clicked.connect(self.new_polygon_window)
         self.newCurve.clicked.connect(self.new_curve_window)
         self.newBSCurve.clicked.connect(self.new_b_curve_window)
+        self.newbibezier.clicked.connect(self.new_3d_bezier_window)
 
         self.newPoint3D.clicked.connect(self.new_point_3d_window)
         self.newObject3D.clicked.connect(self.new_object_3d_window)
@@ -113,10 +116,11 @@ class Ui(QtWidgets.QMainWindow):
         points = [(20, 20), (20, 380), (380, 20), (380, 380)]
 
         polygon = QtGui.QPolygonF()
+
         for point in points:
             new_point = QtCore.QPointF(point[0], point[1])
-            
             polygon.append(new_point)
+
         path = QtGui.QPainterPath()
         path.addPolygon(polygon)
         self.painter.setBrush(QtGui.QColor(Qt.red))
@@ -239,6 +243,7 @@ class Ui(QtWidgets.QMainWindow):
     def drawAll(self):
         self.mainLabel.pixmap().fill(Qt.white)
         self.drawBorder()
+
         for object in self.displayFile:
             self.drawOne(object)
             self.drawBorder()
@@ -411,15 +416,16 @@ class Ui(QtWidgets.QMainWindow):
 
 
     def waLimites(self, points):
-            inside = []
-            for p in points:
-                if (p[0] >= self.cgSubcanvas.xMin
-                    and p[1] >= self.cgSubcanvas.yMin) and (
-                    p[0] <= self.cgSubcanvas.xMax
-                    and p[1] <= self.cgSubcanvas.yMax):
-                    inside.append(p)
+        inside = []
 
-            return inside
+        for p in points:
+            if (p[0] >= self.cgSubcanvas.xMin
+                and p[1] >= self.cgSubcanvas.yMin) and (
+                p[0] <= self.cgSubcanvas.xMax
+                and p[1] <= self.cgSubcanvas.yMax):
+                inside.append(p)
+
+        return inside
 
     def Waclippig(self, coordinates):
         points_inside = self.waLimites(coordinates)
@@ -459,6 +465,7 @@ class Ui(QtWidgets.QMainWindow):
     
         new_polygons = []
         new_points = []
+
         if points_inserted != []:
             while points_inserted != []:
                 ref = points_inserted.pop(0)
@@ -722,6 +729,83 @@ class Ui(QtWidgets.QMainWindow):
         else:
             self.status.addItem("Failure! Something is not correct with the polygon")
 
+        self.update()
+    
+    def new_3d_bezier_window(self):
+        new_bezier_curve = UiBezierCurve()
+        if new_bezier_curve.exec_() and  new_bezier_curve.xValue.text() and new_bezier_curve.yValue.text() and new_bezier_curve.zValue.text() and new_bezier_curve.xValue_2.text() and new_bezier_curve.yValue_2.text() and new_bezier_curve.zValue_2.text() and  new_bezier_curve.xValue_3.text() and new_bezier_curve.yValue_3.text() and new_bezier_curve.zValue_3.text() and  new_bezier_curve.xValue_4.text() and new_bezier_curve.yValue_4.text() and new_bezier_curve.zValue_4.text() and  new_bezier_curve.xValue_5.text() and new_bezier_curve.yValue_5.text() and new_bezier_curve.zValue_5.text() and  new_bezier_curve.xValue_6.text() and new_bezier_curve.yValue_6.text() and new_bezier_curve.zValue_6.text() and  new_bezier_curve.xValue_7.text() and new_bezier_curve.yValue_7.text() and new_bezier_curve.zValue_7.text() and  new_bezier_curve.xValue_8.text() and new_bezier_curve.yValue_8.text() and new_bezier_curve.zValue_8.text() and  new_bezier_curve.xValue_9.text() and new_bezier_curve.yValue_9.text() and new_bezier_curve.zValue_9.text() and  new_bezier_curve.xValue_10.text() and new_bezier_curve.yValue_10.text() and new_bezier_curve.zValue_10.text() and  new_bezier_curve.xValue_11.text() and new_bezier_curve.yValue_11.text() and new_bezier_curve.zValue_11.text() and  new_bezier_curve.xValue_12.text() and new_bezier_curve.yValue_12.text() and new_bezier_curve.zValue_12.text() and  new_bezier_curve.xValue_13.text() and new_bezier_curve.yValue_13.text() and new_bezier_curve.zValue_13.text() and  new_bezier_curve.xValue_14.text() and new_bezier_curve.yValue_14.text() and new_bezier_curve.zValue_14.text() and  new_bezier_curve.xValue_15.text() and new_bezier_curve.yValue_15.text() and new_bezier_curve.zValue_15.text() and  new_bezier_curve.xValue_16.text() and new_bezier_curve.yValue_16.text() and new_bezier_curve.zValue_15.text():
+            pass
+
+        p1 = Point3D(int(new_bezier_curve.xValue.text()), int(new_bezier_curve.yValue.text()), int(new_bezier_curve.zValue.text()))
+        p2 = Point3D(int(new_bezier_curve.xValue_2.text()), int(new_bezier_curve.yValue_2.text()), int(new_bezier_curve.zValue_2.text()))
+        p3 = Point3D(int(new_bezier_curve.xValue_3.text()), int(new_bezier_curve.yValue_3.text()), int(new_bezier_curve.zValue_3.text()))
+        p4 = Point3D(int(new_bezier_curve.xValue_4.text()), int(new_bezier_curve.yValue_4.text()), int(new_bezier_curve.zValue_4.text()))
+        p5 = Point3D(int(new_bezier_curve.xValue_5.text()), int(new_bezier_curve.yValue_5.text()), int(new_bezier_curve.zValue_5.text()))
+        p6 = Point3D(int(new_bezier_curve.xValue_6.text()), int(new_bezier_curve.yValue_6.text()), int(new_bezier_curve.zValue_6.text()))
+        p7 = Point3D(int(new_bezier_curve.xValue_7.text()), int(new_bezier_curve.yValue_7.text()), int(new_bezier_curve.zValue_7.text()))
+        p8 = Point3D(int(new_bezier_curve.xValue_8.text()), int(new_bezier_curve.yValue_8.text()), int(new_bezier_curve.zValue_8.text()))
+        p9 = Point3D(int(new_bezier_curve.xValue_9.text()), int(new_bezier_curve.yValue_9.text()), int(new_bezier_curve.zValue_9.text()))
+        p10 = Point3D(int(new_bezier_curve.xValue_10.text()), int(new_bezier_curve.yValue_10.text()), int(new_bezier_curve.zValue_10.text()))
+        p11 = Point3D(int(new_bezier_curve.xValue_11.text()), int(new_bezier_curve.yValue_11.text()), int(new_bezier_curve.zValue_11.text()))
+        p12 = Point3D(int(new_bezier_curve.xValue_12.text()), int(new_bezier_curve.yValue_12.text()), int(new_bezier_curve.zValue_12.text()))
+        p13 = Point3D(int(new_bezier_curve.xValue_13.text()), int(new_bezier_curve.yValue_13.text()), int(new_bezier_curve.zValue_13.text()))
+        p14 = Point3D(int(new_bezier_curve.xValue_14.text()), int(new_bezier_curve.yValue_14.text()), int(new_bezier_curve.zValue_14.text()))
+        p15 = Point3D(int(new_bezier_curve.xValue_15.text()), int(new_bezier_curve.yValue_15.text()), int(new_bezier_curve.zValue_15.text()))
+        p16 = Point3D(int(new_bezier_curve.xValue_16.text()), int(new_bezier_curve.yValue_16.text()), int(new_bezier_curve.zValue_16.text()))
+        
+        precision = 0.2
+        
+        ps = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16]
+        
+        gbsx = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        gbsy = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        gbsz = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        
+        p = 0
+        for i in range(4):
+            for j in range(4):
+                gbsx[i][j] = ps[p].x
+                gbsy[i][j] = ps[p].y
+                gbsz[i][j] = ps[p].z
+                p += 1
+        
+        mb = [[-1, 3, -3, 1],
+              [3, -6, 3, 0],
+              [-3, 3, 0, 0],
+              [1, 0, 0, 0]]
+        
+        newxs = []
+        newys = []
+        newzs = []
+        
+        for s in np.arange(0, 1, precision):
+            for t in np.arange(0, 1, precision):
+                mats = [s**3, s**2, s, 1]
+                matt = [t**3, t**2, t, 1]
+                
+                xst = reduce(np.dot, [mats, mb, gbsx, np.array(mb).T, np.array(matt).T])
+                yst = reduce(np.dot, [mats, mb, gbsy, np.array(mb).T, np.array(matt).T])
+                zst = reduce(np.dot, [mats, mb, gbsz, np.array(mb).T, np.array(matt).T])
+                newxs.append(xst)
+                newys.append(yst)
+                newzs.append(zst)
+                
+        points = []
+        edges = []
+        
+        zipped = list(zip(newxs, newys, newzs))
+        for p in zipped:
+            points.append(Point3D(p[0], p[1], p[2]))
+            
+        for i in range(1, len(points)):
+            edges.append((i-1, i))
+            
+        newbibezier = Object3D(points, edges, "Curve 3D {}".format(self.indexes[6]))
+        self.displayFile.append(newbibezier)
+        self.indexes[6] += 1
+        self.objectList.addItem(newbibezier.name)
+        self.drawOne(newbibezier)
+        self.status.addItem("New Object 3D Added")
         self.update()
 
     def getBlending(self, t):
