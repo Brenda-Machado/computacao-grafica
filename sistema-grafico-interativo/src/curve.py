@@ -19,13 +19,14 @@ class UiCurve(QtWidgets.QDialog):
 
     def point_window(self):
         new_point_dialog = UiPoint()
+
         if new_point_dialog.exec_() and new_point_dialog.xValue.text() and new_point_dialog.yValue.text():
-            print("New Point")
+
             x = int(new_point_dialog.xValue.text())
             y = int(new_point_dialog.yValue.text())
-            print(x)
-            print(y)
+
             new_point = Point(x, y, "")
             self.curve_list.append(new_point)
             self.point_list.addItem("New Point Added {},{}".format(x,y))
+        
         self.update()

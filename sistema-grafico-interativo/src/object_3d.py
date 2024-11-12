@@ -17,7 +17,7 @@ class UiObject3D(QtWidgets.QDialog):
 
         self.poly_list = []
         self.list_edge = []
-        
+
         self.point_index = 0
         self.edge_index = 0
 
@@ -45,14 +45,15 @@ class UiObject3D(QtWidgets.QDialog):
 
         if new_edge_dialog.exec_() and new_edge_dialog.p1.text() and new_edge_dialog.p2.text():
             
-            if (int(new_edge_dialog.p1.text()) < 0) or (
-                int(new_edge_dialog.p1.text()) >= len(self.poly_list)): return
-            if (int(new_edge_dialog.p2.text()) < 0) or (
-                int(new_edge_dialog.p2.text()) >= len(self.poly_list)): return
+            if (int(new_edge_dialog.p1.text()) < 0) or (int(new_edge_dialog.p1.text()) >= len(self.poly_list)): 
+                return
+            if (int(new_edge_dialog.p2.text()) < 0) or (int(new_edge_dialog.p2.text()) >= len(self.poly_list)): 
+                return
             
             p1 = int(new_edge_dialog.p1.text())
             p2 = int(new_edge_dialog.p2.text())
             self.list_edge.append((p1, p2))
             self.edge_list.addItem("{}: Edge ({} -> {})".format(self.edge_index, p1, p2))
             self.edge_index += 1
+        
         self.update()

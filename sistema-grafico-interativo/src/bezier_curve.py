@@ -5,8 +5,6 @@ Brenda Silva Machado - 21101954
 """
 
 from PyQt5 import QtWidgets, uic
-from point import UiPoint
-from object import Point
 
 class UiBezierCurve(QtWidgets.QDialog):
     def __init__(self, parent=None):

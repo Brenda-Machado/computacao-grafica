@@ -22,6 +22,7 @@ from object_3d import UiObject3D
 from point_3d import UiPoint3D
 from bezier_curve import UiBezierCurve
 from transform_3d import UiTransform3D
+from curve_fd import UiCurveFd
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
@@ -62,7 +63,6 @@ class Ui(QtWidgets.QMainWindow):
         self.makePPCmatrix()
         self.applyPPCmatrixWindow()
         self.drawBorder()
-        # self.cube_test()
 
     def viewportTransformation(self, point):
         xvp = (point.cn_x - self.cgWindowPPC.xMin)/(self.cgWindowPPC.xMax - self.cgWindowPPC.xMin) * (self.cgViewport.xMax - self.cgViewport.xMin) 
@@ -88,6 +88,7 @@ class Ui(QtWidgets.QMainWindow):
         self.newCurve.clicked.connect(self.new_curve_window)
         self.newBSCurve.clicked.connect(self.new_b_curve_window)
         self.newbibezier.clicked.connect(self.new_3d_bezier_window)
+        self.newbifd.clicked.connect(self.new_curve_fd_window)
 
         self.newPoint3D.clicked.connect(self.new_point_3d_window)
         self.newObject3D.clicked.connect(self.new_object_3d_window)
@@ -128,6 +129,7 @@ class Ui(QtWidgets.QMainWindow):
         self.painter.drawLine(polygon[0], polygon[2])
         self.painter.drawLine(polygon[1], polygon[3])
         self.painter.drawLine(polygon[2], polygon[3])
+        self.update()
     
     def drawOne(self, object):
         self.pen = QtGui.QPen(QtGui.QColor(object.color[0], object.color[1], object.color[2], 255))
@@ -138,6 +140,7 @@ class Ui(QtWidgets.QMainWindow):
             self.drawOne2D(object)
         else:
             self.drawOne3D(object)
+        self.update()
 
     def drawOne2D(self, object):
         self.applyPPCmatrixOne(object)
@@ -150,13 +153,12 @@ class Ui(QtWidgets.QMainWindow):
         elif object.type == "Line":
             (x1, y1) = self.viewportTransformation(object.p1)
             (x2,y2) = self.viewportTransformation(object.p2)
-            print(f"Point 1 ({x1}, {y1})")
-            print(f"Point 2 ({x2}, {y2})")
+
             if self.csCheck.isChecked():
                 clipRes = self.csLineClipping(x1, y1, x2, y2)
             else:
                 clipRes = self.lbLineClipping(x1, y1, x2, y2)
-            print(clipRes)
+
             if clipRes[0]:
                 self.painter.drawLine(int(clipRes[1]), int(clipRes[2]), int(clipRes[3]), int(clipRes[4]))
 
@@ -201,9 +203,12 @@ class Ui(QtWidgets.QMainWindow):
         
         elif object.type == "Curve":
             ps = []
+
             for p in object.points:
                 ps.append(self.viewportTransformation(p))
+            
             nps = self.curve_clipping(ps)
+
             if nps:
                 for i in range(1, len(nps)):
                     self.painter.drawLine(int(nps[i-1][0]), int(nps[i-1][1]), int(nps[i][0]), int(nps[i][1]))
@@ -213,6 +218,7 @@ class Ui(QtWidgets.QMainWindow):
         
         if object.type == "Point3D":
             (x, y) = self.viewportTransformation(object)
+            
             if self.pointClipping(x,y):
                 self.painter.drawPoint(x, y)
                 
@@ -429,6 +435,7 @@ class Ui(QtWidgets.QMainWindow):
 
     def Waclippig(self, coordinates):
         points_inside = self.waLimites(coordinates)
+
         if not points_inside:
             return False, [None]
         
@@ -436,6 +443,7 @@ class Ui(QtWidgets.QMainWindow):
                     ((self.cgSubcanvas.xMax, self.cgSubcanvas.yMax), 0), 
                     ((self.cgSubcanvas.xMax, self.cgSubcanvas.yMin), 0), 
                     ((self.cgSubcanvas.xMin, self.cgSubcanvas.yMin), 0)]
+        
         obj_vertices = [(list(c), 0) for c in coordinates]
 
         total_points = len(coordinates)
@@ -448,8 +456,8 @@ class Ui(QtWidgets.QMainWindow):
             np0 = [None, None]
             np1 = [None, None]
 
-            visivel, np0[0], np0[1], np1[0], np1[1] = self.csLineClipping(
-                p0[0], p0[1], p1[0], p1[1])
+            visivel, np0[0], np0[1], np1[0], np1[1] = self.csLineClipping(p0[0], p0[1], p1[0], p1[1])
+            
             if visivel:
                 if np1 != p1:
                     point_idx = obj_vertices.index((p0, 0)) + 1
@@ -502,6 +510,7 @@ class Ui(QtWidgets.QMainWindow):
     def curve_clipping(self, points):
         clip_points = []
         started = False
+
         for i in range(1, len(points)):
             p1 = points[i-1]
             p2 = points[i]
@@ -514,11 +523,14 @@ class Ui(QtWidgets.QMainWindow):
 
             clipped = self.csLineClipping(x1, y1, x2, y2)
             if clipped[0]:
-                if started == False: started = True
+                if started == False: 
+                    started = True
+                
                 clip_points.append((clipped[1], clipped[2]))
                 clip_points.append((clipped[3], clipped[4]))
             else:
-                if started: break
+                if started: 
+                    break
 
         return clip_points
 
@@ -620,17 +632,14 @@ class Ui(QtWidgets.QMainWindow):
 
             if cont == 0 and len(new_curve_dialog.point_list) % 4 != 0:
                 self.status.addItem("Number of points must be multiple of 4!")
-                print("Number of points must be multiple of 4!")
                 self.update()
                 return
             elif cont == 1 and (len(new_curve_dialog.point_list) - 4) % 3 != 0:
                 self.status.addItem("Number of points must be 4 plus a multiple of 3!")
-                print("Number of points must be 4 plus a multiple of 3!")
                 self.update()
                 return
             elif cont == 2 and (len(new_curve_dialog.point_list) - 4) % 2 != 0:
                 self.status.addItem("Number of points must be 4 plus a multiple of 2!")
-                print("Number of points must be 4 plus a multiple of 2!")
                 self.update()
                 return
 
@@ -727,14 +736,12 @@ class Ui(QtWidgets.QMainWindow):
             self.status.addItem("New Object 3D Added")
 
         else:
-            self.status.addItem("Failure! Something is not correct with the polygon")
+            self.status.addItem("Failure! Something is not correct with the object")
 
         self.update()
     
     def new_3d_bezier_window(self):
         new_bezier_curve = UiBezierCurve()
-        if new_bezier_curve.exec_() and  new_bezier_curve.xValue.text() and new_bezier_curve.yValue.text() and new_bezier_curve.zValue.text() and new_bezier_curve.xValue_2.text() and new_bezier_curve.yValue_2.text() and new_bezier_curve.zValue_2.text() and  new_bezier_curve.xValue_3.text() and new_bezier_curve.yValue_3.text() and new_bezier_curve.zValue_3.text() and  new_bezier_curve.xValue_4.text() and new_bezier_curve.yValue_4.text() and new_bezier_curve.zValue_4.text() and  new_bezier_curve.xValue_5.text() and new_bezier_curve.yValue_5.text() and new_bezier_curve.zValue_5.text() and  new_bezier_curve.xValue_6.text() and new_bezier_curve.yValue_6.text() and new_bezier_curve.zValue_6.text() and  new_bezier_curve.xValue_7.text() and new_bezier_curve.yValue_7.text() and new_bezier_curve.zValue_7.text() and  new_bezier_curve.xValue_8.text() and new_bezier_curve.yValue_8.text() and new_bezier_curve.zValue_8.text() and  new_bezier_curve.xValue_9.text() and new_bezier_curve.yValue_9.text() and new_bezier_curve.zValue_9.text() and  new_bezier_curve.xValue_10.text() and new_bezier_curve.yValue_10.text() and new_bezier_curve.zValue_10.text() and  new_bezier_curve.xValue_11.text() and new_bezier_curve.yValue_11.text() and new_bezier_curve.zValue_11.text() and  new_bezier_curve.xValue_12.text() and new_bezier_curve.yValue_12.text() and new_bezier_curve.zValue_12.text() and  new_bezier_curve.xValue_13.text() and new_bezier_curve.yValue_13.text() and new_bezier_curve.zValue_13.text() and  new_bezier_curve.xValue_14.text() and new_bezier_curve.yValue_14.text() and new_bezier_curve.zValue_14.text() and  new_bezier_curve.xValue_15.text() and new_bezier_curve.yValue_15.text() and new_bezier_curve.zValue_15.text() and  new_bezier_curve.xValue_16.text() and new_bezier_curve.yValue_16.text() and new_bezier_curve.zValue_15.text():
-            pass
 
         p1 = Point3D(int(new_bezier_curve.xValue.text()), int(new_bezier_curve.yValue.text()), int(new_bezier_curve.zValue.text()))
         p2 = Point3D(int(new_bezier_curve.xValue_2.text()), int(new_bezier_curve.yValue_2.text()), int(new_bezier_curve.zValue_2.text()))
@@ -762,6 +769,7 @@ class Ui(QtWidgets.QMainWindow):
         gbsz = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
         
         p = 0
+
         for i in range(4):
             for j in range(4):
                 gbsx[i][j] = ps[p].x
@@ -782,7 +790,6 @@ class Ui(QtWidgets.QMainWindow):
             for t in np.arange(0, 1, precision):
                 mats = [s**3, s**2, s, 1]
                 matt = [t**3, t**2, t, 1]
-                
                 xst = reduce(np.dot, [mats, mb, gbsx, np.array(mb).T, np.array(matt).T])
                 yst = reduce(np.dot, [mats, mb, gbsy, np.array(mb).T, np.array(matt).T])
                 zst = reduce(np.dot, [mats, mb, gbsz, np.array(mb).T, np.array(matt).T])
@@ -792,8 +799,8 @@ class Ui(QtWidgets.QMainWindow):
                 
         points = []
         edges = []
-        
         zipped = list(zip(newxs, newys, newzs))
+
         for p in zipped:
             points.append(Point3D(p[0], p[1], p[2]))
             
@@ -807,6 +814,239 @@ class Ui(QtWidgets.QMainWindow):
         self.drawOne(newbibezier)
         self.status.addItem("New Object 3D Added")
         self.update()
+    
+    def new_curve_fd_window(self):
+
+        NewBfFdDialog = UiCurveFd()
+        matrix = []
+
+        if NewBfFdDialog.exec_() and NewBfFdDialog.xValue.text():
+            linhaValues = int(NewBfFdDialog.xValue.text())
+            matrix =  [[None for _ in range(linhaValues)] for _ in range(linhaValues)]
+
+            for linha in range(linhaValues):
+                for coluna in range(linhaValues):
+                    
+                    novoPontoDialog = UiPoint3D()
+                    if novoPontoDialog.exec_() and (
+                        novoPontoDialog.xValue.text() and 
+                        novoPontoDialog.yValue.text() and
+                        novoPontoDialog.zValue.text()):
+                        
+                        x = int(novoPontoDialog.xValue.text())
+                        y = int(novoPontoDialog.yValue.text())
+                        z = int(novoPontoDialog.zValue.text())
+                        
+                        matrix[linha][coluna] = Point3D(x, y, z)
+
+        ns = 2
+        nt = 2
+        
+        ax = [[0 for _ in range(linhaValues)]] * linhaValues
+        ay = [[0 for _ in range(linhaValues)]] * linhaValues
+        az = [[0 for _ in range(linhaValues)]] * linhaValues
+        
+        matrix = self.testeMatrix()
+        p = 0
+
+        for i in range(linhaValues):
+            for j in range(linhaValues):
+                print(matrix[i][j])
+                ax[i][j] = matrix[i][j].x
+                ay[i][j] = matrix[i][j].y
+                az[i][j] = matrix[i][j].z
+                p += 1
+                
+        b = [[-1, 3, -3, 1],
+              [3, -6, 3, 0],
+              [-3, 3, 0, 0],
+              [1, 0, 0, 0]]
+        
+        cx = np.dot(np.dot(b, ax), b)
+        cy = np.dot(np.dot(b, ay), b)
+        cz = np.dot(np.dot(b, az), b)
+
+        deltaS = 1/(ns-1)
+        deltaT = 1/(nt-1)
+        
+        Es = [[0 for _ in range(4)]] * 4
+        Et = [[0 for _ in range(4)]] * 4
+        
+        Es[0][0] = 0
+        Es[0][1] = 0
+        Es[0][2] = 0
+        Es[0][3] = 1
+        Es[1][0] = deltaS ** 3
+        Es[1][1] = deltaS ** 2
+        Es[1][2] = deltaS
+        Es[1][3] = 0
+        Es[2][0] = 6 * (deltaS ** 3)
+        Es[2][1] = 2 * (deltaS ** 2)
+        Es[2][2] = 0
+        Es[2][3] = 0
+        Es[3][0] = 6 * (deltaS ** 3)
+        Es[3][1] = 0
+        Es[3][2] = 0
+        Es[3][3] = 0
+        Et[0][0] = 0
+        Et[0][1] = 0
+        Et[0][2] = 0
+        Et[0][3] = 1
+        Et[1][0] = deltaT ** 3
+        Et[1][1] = deltaT ** 2
+        Et[1][2] = deltaT
+        Et[1][3] = 0
+        Et[2][0] = 6 * (deltaT ** 3)
+        Et[2][1] = 2 * (deltaT ** 2)
+        Et[2][2] = 0
+        Et[2][3] = 0
+        Et[3][0] = 6 * (deltaT ** 3)
+        Et[3][1] = 0
+        Et[3][2] = 0
+        Et[3][3] = 0
+
+        Et = np.array(Et).T
+        
+        DDx, DDy, DDz = self.refazDD(cx, cy, cz, Es, Et)
+
+        points = []
+        edges = []
+        
+        for i in range(ns):
+            self.umaCurva(nt,
+                          DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
+                          DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
+                          DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3],
+                          points, edges)
+            self.somaDD(DDx, DDy, DDz)
+            
+        DDx, DDy, DDz = self.refazDD(cx, cy, cz, Es, Et)
+        
+        DDx = np.array(DDx).T
+        DDy = np.array(DDy).T
+        DDz = np.array(DDz).T
+        
+        for i in range(nt):
+            self.umaCurva(ns,
+                          DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
+                          DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
+                          DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3],
+                          points, edges)
+            self.somaDD(DDx, DDy, DDz)
+            
+
+        newbifd = Object3D(points, edges)
+        self.displayFile.append(newbifd)
+        self.indexes[6] += 1
+        self.objectList.addItem(newbifd.name)
+        self.drawOne(newbifd)
+        self.status.addItem("Polígono 3D adicionado com sucesso.")
+        self.update()
+        
+    
+    def refazDD(self, cx, cy, cz, Es, Et):
+        DDx = np.dot(np.dot(Es, cx), Et)
+        DDy = np.dot(np.dot(Es, cy), Et)
+        DDz = np.dot(np.dot(Es, cz), Et)
+
+        return (DDx, DDy, DDz)
+    
+    def testeMatrix(self):
+        p11 = Point3D(150, 190, 170)
+        p12 = Point3D(190, 190, 170)
+        p13 = Point3D(130, 190, 170)
+        p14 = Point3D(170, 190, 170)
+        
+        p21 = Point3D(190, 190, 180)
+        p22 = Point3D(100, 140, 180)
+        p23 = Point3D(190, 140, 180)
+        p24 = Point3D(160, 190, 180)
+        
+        p31 = Point3D(130, 190, 190)
+        p32 = Point3D(190, 140, 190)
+        p33 = Point3D(160, 140, 190)
+        p34 = Point3D(160, 190, 190)
+        
+        p41 = Point3D(170, 190, 200)
+        p42 = Point3D(160, 190, 200)
+        p43 = Point3D(160, 190, 200)
+        p44 = Point3D(160, 190, 200)
+        matrix = [  [p11, p12, p13, p14],
+                    [p21, p22, p23, p24],
+                    [p31, p32, p33, p34],
+                    [p41, p42, p43, p44]]
+        return matrix    
+    
+    def umaCurva(self, n,   x, Dx, D2x, D3x, 
+                            y, Dy, D2y, D3y,
+                            z, Dz, D2z, D3z,
+                            points, edges):
+        
+        oldX, oldY, oldZ = x, y, z
+        points.append(Point3D(oldX, oldY, oldZ))
+        
+        for i in range(1, n):
+            x += Dx
+            Dx += D2x
+            D2x += D3x
+            
+            y += Dy
+            Dy += D2y
+            D2y += D3y
+            
+            z += Dz
+            Dz += D2z
+            D2z += D3z
+            
+            points.append(Point3D(x, y, z))
+            edges.append((i-1, i))
+            oldX = x
+            oldY = y
+            oldZ = z
+            
+    def somaDD(self, DDx, DDy, DDz):
+        DDx[0][0] += DDx[1][0]
+        DDx[0][1] += DDx[1][1]
+        DDx[0][2] += DDx[1][2]
+        DDx[0][3] += DDx[1][3]
+        DDy[0][0] += DDy[1][0]
+        DDy[0][1] += DDy[1][1]
+        DDy[0][2] += DDy[1][2]
+        DDy[0][3] += DDy[1][3]
+        DDz[0][0] += DDz[1][0]
+        DDz[0][1] += DDz[1][1]
+        DDz[0][2] += DDz[1][2]
+        DDz[0][3] += DDz[1][3]
+    
+        DDx[1][0] += DDx[2][0]
+        DDx[1][1] += DDx[2][1]
+        DDx[1][2] += DDx[2][2]
+        DDx[1][3] += DDx[2][3]
+
+        DDy[1][0] += DDy[2][0]
+        DDy[1][1] += DDy[2][1]
+        DDy[1][2] += DDy[2][2]
+        DDy[1][3] += DDy[2][3]
+
+        DDz[1][0] += DDz[2][0]
+        DDz[1][1] += DDz[2][1]
+        DDz[1][2] += DDz[2][2]
+        DDz[1][3] += DDz[2][3]
+        
+        DDx[2][0] += DDx[3][0]
+        DDx[2][1] += DDx[3][1]
+        DDx[2][2] += DDx[3][2]
+        DDx[2][3] += DDx[3][3]
+        
+        DDy[2][0] += DDy[3][0]
+        DDy[2][1] += DDy[3][1]
+        DDy[2][2] += DDy[3][2]
+        DDy[2][3] += DDy[3][3]
+        
+        DDz[2][0] += DDz[3][0]
+        DDz[2][1] += DDz[3][1]
+        DDz[2][2] += DDz[3][2]
+        DDz[2][3] += DDz[3][3]
 
     def getBlending(self, t):
         return [(1 - t) ** 3, 3 * t * ((1 - t) ** 2), 3 * (t ** 2) * (1 - t), t ** 3]
@@ -818,6 +1058,7 @@ class Ui(QtWidgets.QMainWindow):
         newlistsY = []
         
         step = 0
+
         if cont == 0: 
             step = 4
         elif cont == 1: 
@@ -833,15 +1074,18 @@ class Ui(QtWidgets.QMainWindow):
 
         for i in range(len(prelistsX)):
             t = 0
+
             while t < 1:
                 newlistsX.append(np.dot(self.getBlending(t), prelistsX[i]))
                 newlistsY.append(np.dot(self.getBlending(t), prelistsY[i]))
                 t += precision
+
             newlistsX.append(np.dot(self.getBlending(1), prelistsX[i]))
             newlistsY.append(np.dot(self.getBlending(1), prelistsY[i]))
         
         coords = list(zip(newlistsX, newlistsY))
         ps = []
+
         for c in coords:
             ps.append(Point(c[0], c[1]))
         return ps
@@ -1333,13 +1577,6 @@ class Ui(QtWidgets.QMainWindow):
                 p.x = X
                 p.y = Y
                 p.z = Z
-    
-    def loadObjs(self):
-        newObjs = self.descObj.load("test.obj")
-        for obj in newObjs:
-            self.displayFile.append(obj)
-            self.objectList.addItem(obj.name)
-        self.drawAll()
 
     def escalation(self, obj, Sx, Sy):
         initial_center = self.find_center(obj)
@@ -1638,36 +1875,3 @@ class Ui(QtWidgets.QMainWindow):
         self.perspd = self.perspSlider.value()
         self.drawAll()
     
-    def cube_test(self):
-        ps = []
-        ps.append(Point3D(100, 100, 100))
-        ps.append(Point3D(200, 100, 100))
-        ps.append(Point3D(200, 200, 100))
-        ps.append(Point3D(100, 200, 100))
-        
-        ps.append(Point3D(100, 100, 200))
-        ps.append(Point3D(200, 100, 200))
-        ps.append(Point3D(200, 200, 200))
-        ps.append(Point3D(100, 200, 200))
-        
-        edges = []
-        edges.append((0, 1))
-        edges.append((1, 2))
-        edges.append((2, 3))
-        edges.append((3, 0))
-        
-        edges.append((4, 5))
-        edges.append((5, 6))
-        edges.append((6, 7))
-        edges.append((7, 4))
-        
-        edges.append((0, 4))
-        edges.append((1, 5))
-        edges.append((2, 6))
-        edges.append((3, 7))
-        
-        cube_test = Object3D(ps, edges, "Test")
-        self.displayFile.append(cube_test)
-        self.objectList.addItem(cube_test.name)
-        self.drawOne(cube_test)
-        self.update()

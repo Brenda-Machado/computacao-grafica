@@ -4,7 +4,6 @@ Brenda Silva Machado - 21101954
 
 """
 
-import sys
 from PyQt5 import QtWidgets, uic
 
 class UiRotWin(QtWidgets.QDialog):

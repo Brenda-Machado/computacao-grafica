@@ -5,8 +5,7 @@ Brenda Silva Machado - 21101954
 """
 
 import pathlib
-from preobject import PreObject
-from object import Point, Line, Wireframe
+from object import Point3D, Object3D
 
 class DescriptorOBJ:
     def __init__(self):
@@ -14,7 +13,6 @@ class DescriptorOBJ:
 
     def load(self, file_path):
         sequence = self.parseObj(file_path)
-        print(sequence)
         return self.processObjects(sequence)
 
     def parseObj(self, file_path):
@@ -58,24 +56,15 @@ class DescriptorOBJ:
         return colors
 
     def processObjects(self, sequence):
-        commands = {
-                "v": [], 
-                "o": [], 
-                "usemtl": [], 
-                "mtlib": [],   
-                "p": [], 
-                "f": [], 
-                "l": [] 
-            }
         verts = []
         objIndex = -1
         preobjects = []
         colors = None
-        objects = []
+
         for e in sequence:
             if e[0] == "v":
-                (x, y, _) = e[1]
-                newVert = Point(int(float(x)), int(float(y)))
+                (x, y, z) = e[1]
+                newVert = Point3D(int(float(x)), int(float(y)), int(float(z)))
                 verts.append(newVert)
             
             elif e[0] == "o":
@@ -98,32 +87,42 @@ class DescriptorOBJ:
             elif e[0] == "p":
                 index = int(e[1][0])
                 newPoint = verts[index-1]
-                newPoint.name = preobjects[objIndex].name
                 newPoint.color = preobjects[objIndex].color
-                objects.append(newPoint)
+                preobjects[objIndex].points.append(newPoint)
+                preobjects[objIndex].edges.append((len(preobjects[objIndex].points)-1, len(preobjects[objIndex].points)-1))
 
             elif e[0] == "l":
                 points = e[1]
                 p1 = verts[int(points[0])-1]
                 p2 = verts[int(points[1])-1]
-                newLine = Line(p1, p2, preobjects[objIndex].name, preobjects[objIndex].color)
-                objects.append(newLine)
+                points = [p1, p2]
+                preobjects[objIndex].points.append(p1)
+                preobjects[objIndex].points.append(p2)
+                preobjects[objIndex].edges.append((len(preobjects[objIndex].points)-2, len(preobjects[objIndex].points)-1))
 
             elif e[0] == "f":
                 print(e[1])
                 points = e[1]
                 pointList = []
-                color = (1,1,1)
+                listIndex = len(preobjects[objIndex].points)
                 for p in points:
                     realPoint = verts[int(p)-1]
                     pointList.append(realPoint)
-                if preobjects[objIndex].color == None:
-                    newPoly = Wireframe(pointList, preobjects[objIndex].name, color)
-                else:
-                    newPoly = Wireframe(pointList, preobjects[objIndex].name, preobjects[objIndex].color)
-                objects.append(newPoly)
+                    preobjects[objIndex].points.append(realPoint)
+                for i in range(listIndex + 1, listIndex + len(pointList)):
+                    preobjects[objIndex].edges.append((i - 1, i))
+                preobjects[objIndex].edges.append((listIndex + len(pointList) - 1, listIndex))
+                
 
             else:
                 print("Error: command not recognized")
+        
+        objects = []
+        for pre in preobjects:
+            realObj = Object3D(pre.points, pre.edges, pre.name, pre.color)
+            objects.append(realObj)
+            print(pre.color)
+            
         return objects
+
 

@@ -10,3 +10,5 @@ from dataclasses import dataclass
 class PreObject:
     name: str = ""
     color: tuple = (0,0,0)
+    points = []
+    edges = []
