@@ -1865,7 +1865,7 @@ class Ui(QtWidgets.QMainWindow):
         self.drawAll()
     
     def loadObjs(self):
-        newObjs = self.descObj.load("teste.obj")
+        newObjs = self.descObj.load("test.obj")
         for obj in newObjs:
             self.displayFile.append(obj)
             self.objectList.addItem(obj.name)

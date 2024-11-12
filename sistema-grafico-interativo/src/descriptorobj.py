@@ -5,6 +5,7 @@ Brenda Silva Machado - 21101954
 """
 
 import pathlib
+from preobject import PreObject
 from object import Point3D, Object3D
 
 class DescriptorOBJ:
