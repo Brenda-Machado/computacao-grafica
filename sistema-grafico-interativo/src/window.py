@@ -104,7 +104,6 @@ class Ui(QtWidgets.QMainWindow):
         self.rotWindowButton.clicked.connect(self.rotate_window)
         self.RestoreButtom.clicked.connect(self.restore_original)
         self.loadButton.clicked.connect(self.load_objects)
-
         self.perspSlider.valueChanged.connect(self.change_perspective)
         self.projOrt.toggled.connect(self.draw_all)
         self.projPersp.toggled.connect(self.draw_all)
@@ -139,6 +138,7 @@ class Ui(QtWidgets.QMainWindow):
             self.draw_one_2d(object)
         else:
             self.draw_one_3d(object)
+
         self.update()
 
     def draw_one_2d(self, object):
@@ -540,12 +540,12 @@ class Ui(QtWidgets.QMainWindow):
 
         return clip_points
     
-    def DD_dot(self, cx, cy, cz, Es, Et):
-        DDx = np.dot(np.dot(Es, cx), Et)
-        DDy = np.dot(np.dot(Es, cy), Et)
-        DDz = np.dot(np.dot(Es, cz), Et)
+    def diff_div_matrix_dot(self, cx, cy, cz, Es, Et):
+        diff_div_matrix_x = np.dot(np.dot(Es, cx), Et)
+        diff_div_matrix_y = np.dot(np.dot(Es, cy), Et)
+        diff_div_matrix_z = np.dot(np.dot(Es, cz), Et)
 
-        return (DDx, DDy, DDz)
+        return (diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z)
     
     def test_matrix(self):
         p11 = Point3D(150, 190, 170)
@@ -602,49 +602,49 @@ class Ui(QtWidgets.QMainWindow):
             oldY = y
             oldZ = z
             
-    def DD_sum(self, DDx, DDy, DDz):
-        DDx[0][0] += DDx[1][0]
-        DDx[0][1] += DDx[1][1]
-        DDx[0][2] += DDx[1][2]
-        DDx[0][3] += DDx[1][3]
-        DDy[0][0] += DDy[1][0]
-        DDy[0][1] += DDy[1][1]
-        DDy[0][2] += DDy[1][2]
-        DDy[0][3] += DDy[1][3]
-        DDz[0][0] += DDz[1][0]
-        DDz[0][1] += DDz[1][1]
-        DDz[0][2] += DDz[1][2]
-        DDz[0][3] += DDz[1][3]
+    def diff_div_matrix_sum(self, diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z):
+        diff_div_matrix_x[0][0] += diff_div_matrix_x[1][0]
+        diff_div_matrix_x[0][1] += diff_div_matrix_x[1][1]
+        diff_div_matrix_x[0][2] += diff_div_matrix_x[1][2]
+        diff_div_matrix_x[0][3] += diff_div_matrix_x[1][3]
+        diff_div_matrix_y[0][0] += diff_div_matrix_y[1][0]
+        diff_div_matrix_y[0][1] += diff_div_matrix_y[1][1]
+        diff_div_matrix_y[0][2] += diff_div_matrix_y[1][2]
+        diff_div_matrix_y[0][3] += diff_div_matrix_y[1][3]
+        diff_div_matrix_z[0][0] += diff_div_matrix_z[1][0]
+        diff_div_matrix_z[0][1] += diff_div_matrix_z[1][1]
+        diff_div_matrix_z[0][2] += diff_div_matrix_z[1][2]
+        diff_div_matrix_z[0][3] += diff_div_matrix_z[1][3]
     
-        DDx[1][0] += DDx[2][0]
-        DDx[1][1] += DDx[2][1]
-        DDx[1][2] += DDx[2][2]
-        DDx[1][3] += DDx[2][3]
+        diff_div_matrix_x[1][0] += diff_div_matrix_x[2][0]
+        diff_div_matrix_x[1][1] += diff_div_matrix_x[2][1]
+        diff_div_matrix_x[1][2] += diff_div_matrix_x[2][2]
+        diff_div_matrix_x[1][3] += diff_div_matrix_x[2][3]
 
-        DDy[1][0] += DDy[2][0]
-        DDy[1][1] += DDy[2][1]
-        DDy[1][2] += DDy[2][2]
-        DDy[1][3] += DDy[2][3]
+        diff_div_matrix_y[1][0] += diff_div_matrix_y[2][0]
+        diff_div_matrix_y[1][1] += diff_div_matrix_y[2][1]
+        diff_div_matrix_y[1][2] += diff_div_matrix_y[2][2]
+        diff_div_matrix_y[1][3] += diff_div_matrix_y[2][3]
 
-        DDz[1][0] += DDz[2][0]
-        DDz[1][1] += DDz[2][1]
-        DDz[1][2] += DDz[2][2]
-        DDz[1][3] += DDz[2][3]
+        diff_div_matrix_z[1][0] += diff_div_matrix_z[2][0]
+        diff_div_matrix_z[1][1] += diff_div_matrix_z[2][1]
+        diff_div_matrix_z[1][2] += diff_div_matrix_z[2][2]
+        diff_div_matrix_z[1][3] += diff_div_matrix_z[2][3]
         
-        DDx[2][0] += DDx[3][0]
-        DDx[2][1] += DDx[3][1]
-        DDx[2][2] += DDx[3][2]
-        DDx[2][3] += DDx[3][3]
+        diff_div_matrix_x[2][0] += diff_div_matrix_x[3][0]
+        diff_div_matrix_x[2][1] += diff_div_matrix_x[3][1]
+        diff_div_matrix_x[2][2] += diff_div_matrix_x[3][2]
+        diff_div_matrix_x[2][3] += diff_div_matrix_x[3][3]
         
-        DDy[2][0] += DDy[3][0]
-        DDy[2][1] += DDy[3][1]
-        DDy[2][2] += DDy[3][2]
-        DDy[2][3] += DDy[3][3]
+        diff_div_matrix_y[2][0] += diff_div_matrix_y[3][0]
+        diff_div_matrix_y[2][1] += diff_div_matrix_y[3][1]
+        diff_div_matrix_y[2][2] += diff_div_matrix_y[3][2]
+        diff_div_matrix_y[2][3] += diff_div_matrix_y[3][3]
         
-        DDz[2][0] += DDz[3][0]
-        DDz[2][1] += DDz[3][1]
-        DDz[2][2] += DDz[3][2]
-        DDz[2][3] += DDz[3][3]
+        diff_div_matrix_z[2][0] += diff_div_matrix_z[3][0]
+        diff_div_matrix_z[2][1] += diff_div_matrix_z[3][1]
+        diff_div_matrix_z[2][2] += diff_div_matrix_z[3][2]
+        diff_div_matrix_z[2][3] += diff_div_matrix_z[3][3]
 
     def get_blending(self, t):
         return [(1 - t) ** 3, 3 * t * ((1 - t) ** 2), 3 * (t ** 2) * (1 - t), t ** 3]
@@ -844,133 +844,6 @@ class Ui(QtWidgets.QMainWindow):
         
         self.update()
     
-    def new_curve_fd_window(self):
-
-        NewBfFdDialog = UiCurveFd()
-        matrix = []
-
-        if NewBfFdDialog.exec_() and NewBfFdDialog.xValue.text():
-            linhaValues = int(NewBfFdDialog.xValue.text())
-            matrix =  [[None for _ in range(linhaValues)] for _ in range(linhaValues)]
-
-            for linha in range(linhaValues):
-                for coluna in range(linhaValues):
-                    
-                    novoPontoDialog = UiPoint3D()
-                    if novoPontoDialog.exec_() and (
-                        novoPontoDialog.xValue.text() and 
-                        novoPontoDialog.yValue.text() and
-                        novoPontoDialog.zValue.text()):
-                        
-                        x = int(novoPontoDialog.xValue.text())
-                        y = int(novoPontoDialog.yValue.text())
-                        z = int(novoPontoDialog.zValue.text())
-                        
-                        matrix[linha][coluna] = Point3D(x, y, z)
-
-        ns = 2
-        nt = 2
-        
-        ax = [[0 for _ in range(linhaValues)]] * linhaValues
-        ay = [[0 for _ in range(linhaValues)]] * linhaValues
-        az = [[0 for _ in range(linhaValues)]] * linhaValues
-        
-        matrix = self.test_matrix()
-        p = 0
-
-        for i in range(linhaValues):
-            for j in range(linhaValues):
-                print(matrix[i][j])
-                ax[i][j] = matrix[i][j].x
-                ay[i][j] = matrix[i][j].y
-                az[i][j] = matrix[i][j].z
-                p += 1
-                
-        b = [[-1, 3, -3, 1],
-              [3, -6, 3, 0],
-              [-3, 3, 0, 0],
-              [1, 0, 0, 0]]
-        
-        cx = np.dot(np.dot(b, ax), b)
-        cy = np.dot(np.dot(b, ay), b)
-        cz = np.dot(np.dot(b, az), b)
-
-        deltaS = 1/(ns-1)
-        deltaT = 1/(nt-1)
-        
-        Es = [[0 for _ in range(4)]] * 4
-        Et = [[0 for _ in range(4)]] * 4
-        
-        Es[0][0] = 0
-        Es[0][1] = 0
-        Es[0][2] = 0
-        Es[0][3] = 1
-        Es[1][0] = deltaS ** 3
-        Es[1][1] = deltaS ** 2
-        Es[1][2] = deltaS
-        Es[1][3] = 0
-        Es[2][0] = 6 * (deltaS ** 3)
-        Es[2][1] = 2 * (deltaS ** 2)
-        Es[2][2] = 0
-        Es[2][3] = 0
-        Es[3][0] = 6 * (deltaS ** 3)
-        Es[3][1] = 0
-        Es[3][2] = 0
-        Es[3][3] = 0
-        Et[0][0] = 0
-        Et[0][1] = 0
-        Et[0][2] = 0
-        Et[0][3] = 1
-        Et[1][0] = deltaT ** 3
-        Et[1][1] = deltaT ** 2
-        Et[1][2] = deltaT
-        Et[1][3] = 0
-        Et[2][0] = 6 * (deltaT ** 3)
-        Et[2][1] = 2 * (deltaT ** 2)
-        Et[2][2] = 0
-        Et[2][3] = 0
-        Et[3][0] = 6 * (deltaT ** 3)
-        Et[3][1] = 0
-        Et[3][2] = 0
-        Et[3][3] = 0
-
-        Et = np.array(Et).T
-        
-        DDx, DDy, DDz = self.DD_dot(cx, cy, cz, Es, Et)
-
-        points = []
-        edges = []
-        
-        for i in range(ns):
-            self.one_curve(nt,
-                          DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
-                          DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
-                          DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3],
-                          points, edges)
-            self.DD_sum(DDx, DDy, DDz)
-            
-        DDx, DDy, DDz = self.DD_dot(cx, cy, cz, Es, Et)
-        
-        DDx = np.array(DDx).T
-        DDy = np.array(DDy).T
-        DDz = np.array(DDz).T
-        
-        for i in range(nt):
-            self.one_curve(ns,
-                          DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
-                          DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
-                          DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3],
-                          points, edges)
-            self.DD_sum(DDx, DDy, DDz)
-            
-
-        newbifd = Object3D(points, edges)
-        self.displayFile.append(newbifd)
-        self.indexes[6] += 1
-        self.objectList.addItem(newbifd.name)
-        self.draw_one(newbifd)
-        self.status.addItem("New object added")
-        self.update()
     
     """
     Objects 3D Functions
@@ -1101,6 +974,134 @@ class Ui(QtWidgets.QMainWindow):
         self.objectList.addItem(newbibezier.name)
         self.draw_one(newbibezier)
         self.status.addItem("New Object 3D Added")
+        self.update()
+
+    def new_curve_fd_window(self):
+
+        NewBfFdDialog = UiCurveFd()
+        matrix = []
+
+        if NewBfFdDialog.exec_() and NewBfFdDialog.xValue.text():
+            line_values = int(NewBfFdDialog.xValue.text())
+            matrix =  [[None for _ in range(line_values)] for _ in range(line_values)]
+
+            for linha in range(line_values):
+                for coluna in range(line_values):
+                    
+                    new_point_dialog = UiPoint3D()
+                    if new_point_dialog.exec_() and (
+                        new_point_dialog.xValue.text() and 
+                        new_point_dialog.yValue.text() and
+                        new_point_dialog.zValue.text()):
+                        
+                        x = int(new_point_dialog.xValue.text())
+                        y = int(new_point_dialog.yValue.text())
+                        z = int(new_point_dialog.zValue.text())
+                        
+                        matrix[linha][coluna] = Point3D(x, y, z)
+
+        ns = 2
+        nt = 2
+        
+        ax = [[0 for _ in range(line_values)]] * line_values
+        ay = [[0 for _ in range(line_values)]] * line_values
+        az = [[0 for _ in range(line_values)]] * line_values
+        
+        matrix = self.test_matrix()
+        p = 0
+
+        for i in range(line_values):
+            for j in range(line_values):
+                print(matrix[i][j])
+                ax[i][j] = matrix[i][j].x
+                ay[i][j] = matrix[i][j].y
+                az[i][j] = matrix[i][j].z
+                p += 1
+                
+        b = [[-1, 3, -3, 1],
+              [3, -6, 3, 0],
+              [-3, 3, 0, 0],
+              [1, 0, 0, 0]]
+        
+        cx = np.dot(np.dot(b, ax), b)
+        cy = np.dot(np.dot(b, ay), b)
+        cz = np.dot(np.dot(b, az), b)
+
+        deltaS = 1/(ns-1)
+        deltaT = 1/(nt-1)
+        
+        Es = [[0 for _ in range(4)]] * 4
+        Et = [[0 for _ in range(4)]] * 4
+        
+        Es[0][0] = 0
+        Es[0][1] = 0
+        Es[0][2] = 0
+        Es[0][3] = 1
+        Es[1][0] = deltaS ** 3
+        Es[1][1] = deltaS ** 2
+        Es[1][2] = deltaS
+        Es[1][3] = 0
+        Es[2][0] = 6 * (deltaS ** 3)
+        Es[2][1] = 2 * (deltaS ** 2)
+        Es[2][2] = 0
+        Es[2][3] = 0
+        Es[3][0] = 6 * (deltaS ** 3)
+        Es[3][1] = 0
+        Es[3][2] = 0
+        Es[3][3] = 0
+        Et[0][0] = 0
+        Et[0][1] = 0
+        Et[0][2] = 0
+        Et[0][3] = 1
+        Et[1][0] = deltaT ** 3
+        Et[1][1] = deltaT ** 2
+        Et[1][2] = deltaT
+        Et[1][3] = 0
+        Et[2][0] = 6 * (deltaT ** 3)
+        Et[2][1] = 2 * (deltaT ** 2)
+        Et[2][2] = 0
+        Et[2][3] = 0
+        Et[3][0] = 6 * (deltaT ** 3)
+        Et[3][1] = 0
+        Et[3][2] = 0
+        Et[3][3] = 0
+
+        Et = np.array(Et).T
+        
+        diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z = self.diff_div_matrix_dot(cx, cy, cz, Es, Et)
+
+        points = []
+        edges = []
+        
+        for i in range(ns):
+            self.one_curve(nt,
+                          diff_div_matrix_x[0][0], diff_div_matrix_x[0][1], diff_div_matrix_x[0][2], diff_div_matrix_x[0][3],
+                          diff_div_matrix_y[0][0], diff_div_matrix_y[0][1], diff_div_matrix_y[0][2], diff_div_matrix_y[0][3],
+                          diff_div_matrix_z[0][0], diff_div_matrix_z[0][1], diff_div_matrix_z[0][2], diff_div_matrix_z[0][3],
+                          points, edges)
+            self.diff_div_matrix_sum(diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z)
+            
+        diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z = self.diff_div_matrix_dot(cx, cy, cz, Es, Et)
+        
+        diff_div_matrix_x = np.array(diff_div_matrix_x).T
+        diff_div_matrix_y = np.array(diff_div_matrix_y).T
+        diff_div_matrix_z = np.array(diff_div_matrix_z).T
+        
+        for i in range(nt):
+            self.one_curve(ns,
+                          diff_div_matrix_x[0][0], diff_div_matrix_x[0][1], diff_div_matrix_x[0][2], diff_div_matrix_x[0][3],
+                          diff_div_matrix_y[0][0], diff_div_matrix_y[0][1], diff_div_matrix_y[0][2], diff_div_matrix_y[0][3],
+                          diff_div_matrix_z[0][0], diff_div_matrix_z[0][1], diff_div_matrix_z[0][2], diff_div_matrix_z[0][3],
+                          points, edges)
+            self.diff_div_matrix_sum(diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z)
+            
+
+        newbifd = Object3D(points, edges)
+        self.displayFile.append(newbifd)
+        self.indexes[6] += 1
+        self.objectList.addItem(newbifd.name)
+        self.draw_one(newbifd)
+        self.status.addItem("New object added")
         self.update()
 
     """
