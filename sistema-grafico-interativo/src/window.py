@@ -682,7 +682,6 @@ class Ui(QtWidgets.QMainWindow):
         new_polygon_dialog = UiPolygon()
 
         if new_polygon_dialog.exec_() and new_polygon_dialog.point_list:
-            print("New polygon")
             new_poly = Wireframe(new_polygon_dialog.poly_list, "Polygon {}".format(self.indexes[2]))
             self.displayFile.append(new_poly)
             self.indexes[2] += 1
@@ -909,134 +908,6 @@ class Ui(QtWidgets.QMainWindow):
         self.draw_one(newbibezier)
         self.status.addItem("New Object 3D Added")
         self.update()
-
-    # def new_curve_fd_window(self):
-
-    #     NewBfFdDialog = UiCurveFd()
-    #     matrix = []
-
-    #     if NewBfFdDialog.exec_() and NewBfFdDialog.xValue.text():
-    #         line_values = int(NewBfFdDialog.xValue.text())
-    #         matrix =  [[None for _ in range(line_values)] for _ in range(line_values)]
-
-    #         for linha in range(line_values):
-    #             for coluna in range(line_values):
-                    
-    #                 new_point_dialog = UiPoint3D()
-    #                 if new_point_dialog.exec_() and (
-    #                     new_point_dialog.xValue.text() and 
-    #                     new_point_dialog.yValue.text() and
-    #                     new_point_dialog.zValue.text()):
-                        
-    #                     x = int(new_point_dialog.xValue.text())
-    #                     y = int(new_point_dialog.yValue.text())
-    #                     z = int(new_point_dialog.zValue.text())
-                        
-    #                     matrix[linha][coluna] = Point3D(x, y, z)
-
-    #     ns = 2
-    #     nt = 2
-        
-    #     ax = [[0 for _ in range(line_values)]] * line_values
-    #     ay = [[0 for _ in range(line_values)]] * line_values
-    #     az = [[0 for _ in range(line_values)]] * line_values
-        
-    #     matrix = self.test_matrix()
-    #     p = 0
-
-    #     for i in range(line_values):
-    #         for j in range(line_values):
-    #             print(matrix[i][j])
-    #             ax[i][j] = matrix[i][j].x
-    #             ay[i][j] = matrix[i][j].y
-    #             az[i][j] = matrix[i][j].z
-    #             p += 1
-                
-    #     b = [[-1, 3, -3, 1],
-    #           [3, -6, 3, 0],
-    #           [-3, 3, 0, 0],
-    #           [1, 0, 0, 0]]
-        
-    #     cx = np.dot(np.dot(b, ax), b)
-    #     cy = np.dot(np.dot(b, ay), b)
-    #     cz = np.dot(np.dot(b, az), b)
-
-    #     deltaS = 1/(ns-1)
-    #     deltaT = 1/(nt-1)
-        
-    #     Es = [[0 for _ in range(4)]] * 4
-    #     Et = [[0 for _ in range(4)]] * 4
-        
-    #     Es[0][0] = 0
-    #     Es[0][1] = 0
-    #     Es[0][2] = 0
-    #     Es[0][3] = 1
-    #     Es[1][0] = deltaS ** 3
-    #     Es[1][1] = deltaS ** 2
-    #     Es[1][2] = deltaS
-    #     Es[1][3] = 0
-    #     Es[2][0] = 6 * (deltaS ** 3)
-    #     Es[2][1] = 2 * (deltaS ** 2)
-    #     Es[2][2] = 0
-    #     Es[2][3] = 0
-    #     Es[3][0] = 6 * (deltaS ** 3)
-    #     Es[3][1] = 0
-    #     Es[3][2] = 0
-    #     Es[3][3] = 0
-    #     Et[0][0] = 0
-    #     Et[0][1] = 0
-    #     Et[0][2] = 0
-    #     Et[0][3] = 1
-    #     Et[1][0] = deltaT ** 3
-    #     Et[1][1] = deltaT ** 2
-    #     Et[1][2] = deltaT
-    #     Et[1][3] = 0
-    #     Et[2][0] = 6 * (deltaT ** 3)
-    #     Et[2][1] = 2 * (deltaT ** 2)
-    #     Et[2][2] = 0
-    #     Et[2][3] = 0
-    #     Et[3][0] = 6 * (deltaT ** 3)
-    #     Et[3][1] = 0
-    #     Et[3][2] = 0
-    #     Et[3][3] = 0
-
-    #     Et = np.array(Et).T
-        
-    #     diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z = self.diff_div_matrix_dot(cx, cy, cz, Es, Et)
-
-    #     points = []
-    #     edges = []
-        
-    #     for i in range(ns):
-    #         self.one_curve(nt,
-    #                       diff_div_matrix_x[0][0], diff_div_matrix_x[0][1], diff_div_matrix_x[0][2], diff_div_matrix_x[0][3],
-    #                       diff_div_matrix_y[0][0], diff_div_matrix_y[0][1], diff_div_matrix_y[0][2], diff_div_matrix_y[0][3],
-    #                       diff_div_matrix_z[0][0], diff_div_matrix_z[0][1], diff_div_matrix_z[0][2], diff_div_matrix_z[0][3],
-    #                       points, edges)
-    #         self.diff_div_matrix_sum(diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z)
-            
-    #     diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z = self.diff_div_matrix_dot(cx, cy, cz, Es, Et)
-        
-    #     diff_div_matrix_x = np.array(diff_div_matrix_x).T
-    #     diff_div_matrix_y = np.array(diff_div_matrix_y).T
-    #     diff_div_matrix_z = np.array(diff_div_matrix_z).T
-        
-    #     for i in range(nt):
-    #         self.one_curve(ns,
-    #                       diff_div_matrix_x[0][0], diff_div_matrix_x[0][1], diff_div_matrix_x[0][2], diff_div_matrix_x[0][3],
-    #                       diff_div_matrix_y[0][0], diff_div_matrix_y[0][1], diff_div_matrix_y[0][2], diff_div_matrix_y[0][3],
-    #                       diff_div_matrix_z[0][0], diff_div_matrix_z[0][1], diff_div_matrix_z[0][2], diff_div_matrix_z[0][3],
-    #                       points, edges)
-    #         self.diff_div_matrix_sum(diff_div_matrix_x, diff_div_matrix_y, diff_div_matrix_z)
-            
-
-    #     newbifd = Object3D(points, edges)
-    #     self.displayFile.append(newbifd)
-    #     self.indexes[6] += 1
-    #     self.objectList.addItem(newbifd.name)
-    #     self.draw_one(newbifd)
-    #     self.status.addItem("New object added")
-    #     self.update()
 
     def new_curve_fd_window(self):
         NewBfFdDialog = UiCurveFd()
@@ -1678,71 +1549,77 @@ class Ui(QtWidgets.QMainWindow):
         return (x,y)
 
     def make_ppc_matrix(self):
+        if type(self.cgWindow.xMax) != int:
+            self.cgWindow.xMax = int(self.cgWindow.xMax[0])
+            self.cgWindow.yMax = int(self.cgWindow.yMax[0])
+            self.cgWindow.xMin = int(self.cgWindow.xMin[0])
+            self.cgWindow.yMin = int(self.cgWindow.yMin[0])
+
         width = self.cgWindow.xMax - self.cgWindow.xMin
         height = self.cgWindow.yMax - self.cgWindow.yMin
         center = self.find_window_center()
 
-        matTrans = [
+        matTrans = np.array([
             [1, 0, 0],
             [0, 1, 0],
             [-center[0], -center[1], 1]
-        ]
+        ])
 
         angZ = np.deg2rad(self.windowAngle[2])
         angX = np.deg2rad(self.windowAngle[0])
         angY = np.deg2rad(self.windowAngle[1])
 
-        matRot = [
+        matRot = np.array([
             [np.cos(angZ), -np.sin(angZ), 0],
             [np.sin(angZ), np.cos(angZ), 0],
             [0, 0, 1]
-        ]
-        
-        matScale = [
+        ])
+
+        matScale = np.array([
             [2 / width, 0, 0],
             [0, 2 / height, 1],
             [0, 0, 1]
-        ]
+        ])
 
         matPPC = np.dot(np.dot(matTrans, matRot), matScale)
         self.ppcMatrix = matPPC
 
-        matTrans3D = [
+        matTrans3D = np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0],
             [0, 0, 1, 0],
             [-center[0], -center[1], 1, 1]
-        ]
+        ])
 
-        Rx = [
+        Rx = np.array([
             [1, 0, 0, 0],
             [0, np.cos(angX), np.sin(angX), 0],
             [0, -np.sin(angX), np.cos(angX), 0],
             [0, 0, 0, 1]
-        ]
-        
-        Ry = [
+        ])
+
+        Ry = np.array([
             [np.cos(angY), 0, -np.sin(angY), 0],
             [0, 1, 0, 0],
             [np.sin(angY), 0, np.cos(angY), 0],
             [0, 0, 0, 1]
-        ]
+        ])
 
-        Rz = [
+        Rz = np.array([
             [np.cos(angZ), np.sin(angZ), 0, 0],
             [-np.sin(angZ), np.cos(angZ), 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, 1]
-        ]
+        ])
 
         matRot3D = np.dot(np.dot(Rx, Ry), Rz)
 
-        matScale3D = [
+        matScale3D = np.array([
             [2 / width, 0, 0, 0],
             [0, 2 / height, 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, 1]
-        ]
+        ])
 
         matPPC3D = np.dot(np.dot(matTrans3D, matRot3D), matScale3D)
         self.ppcMatrix3D = matPPC3D
