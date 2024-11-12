@@ -1224,7 +1224,7 @@ class Ui(QtWidgets.QMainWindow):
             return(x, y, z)
         
     def load_objects(self):
-        newObjs = self.descObj.load("test_curve_fd.obj")
+        newObjs = self.descObj.load("test.obj")
         for obj in newObjs:
             self.displayFile.append(obj)
             self.objectList.addItem(obj.name)
@@ -1681,100 +1681,105 @@ class Ui(QtWidgets.QMainWindow):
         width = self.cgWindow.xMax - self.cgWindow.xMin
         height = self.cgWindow.yMax - self.cgWindow.yMin
         center = self.find_window_center()
-        
-        matTrans =  [   [1, 0, 0],
-                        [0, 1, 0],
-                        [-center[0], -center[1], 1]
-                    ]
+
+        matTrans = [
+            [1, 0, 0],
+            [0, 1, 0],
+            [-center[0], -center[1], 1]
+        ]
 
         angZ = np.deg2rad(self.windowAngle[2])
         angX = np.deg2rad(self.windowAngle[0])
         angY = np.deg2rad(self.windowAngle[1])
 
-        matRot =    [   [np.cos(angZ), -np.sin(angZ), 0],
-                        [np.sin(angZ), np.cos(angZ), 0],
-                        [0, 0, 1]
-                    ]
+        matRot = [
+            [np.cos(angZ), -np.sin(angZ), 0],
+            [np.sin(angZ), np.cos(angZ), 0],
+            [0, 0, 1]
+        ]
         
-        matScale =  [   [2/width,   0,          0],
-                        [0,         2/height,   1],
-                        [0,         0,          1]
+        matScale = [
+            [2 / width, 0, 0],
+            [0, 2 / height, 1],
+            [0, 0, 1]
+        ]
 
-                    ]
-        
         matPPC = np.dot(np.dot(matTrans, matRot), matScale)
         self.ppcMatrix = matPPC
-        
-        matTrans3D =  [   [1, 0, 0, 0],
-                        [0, 1, 0, 0],
-                        [0, 0, 1, 0],
-                        [-center[0], -center[1], 1, 1]
-                    ]
 
-        angZ = np.deg2rad(self.windowAngle[2])
-        angX = np.deg2rad(self.windowAngle[0])
-        angY = np.deg2rad(self.windowAngle[1])
+        matTrans3D = [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [-center[0], -center[1], 1, 1]
+        ]
 
-        Rx = [  [1, 0, 0, 0],
-                    [0, np.cos(angX), np.sin(angX), 0],
-                    [0, -np.sin(angX), np.cos(angX), 0],
-                    [0, 0, 0, 1],
-                ]
-        Ry = [  [np.cos(angY), 0, -np.sin(angY), 0],
-                [0, 1, 0, 0],
-                [np.sin(angY), 0, np.cos(angY), 0],
-                [0, 0, 0, 1],
-            ]
-        Rz = [  [np.cos(angZ), np.sin(angZ), 0, 0],
-                [-np.sin(angZ), np.cos(angZ), 0, 0],
-                [0, 0, 1, 0],
-                [0, 0, 0, 1],
-            ]
+        Rx = [
+            [1, 0, 0, 0],
+            [0, np.cos(angX), np.sin(angX), 0],
+            [0, -np.sin(angX), np.cos(angX), 0],
+            [0, 0, 0, 1]
+        ]
         
+        Ry = [
+            [np.cos(angY), 0, -np.sin(angY), 0],
+            [0, 1, 0, 0],
+            [np.sin(angY), 0, np.cos(angY), 0],
+            [0, 0, 0, 1]
+        ]
+
+        Rz = [
+            [np.cos(angZ), np.sin(angZ), 0, 0],
+            [-np.sin(angZ), np.cos(angZ), 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ]
+
         matRot3D = np.dot(np.dot(Rx, Ry), Rz)
-        
-        matScale3D =  [   [2/width,   0,          0, 0],
-                        [0,         2/height,   0, 0],
-                        [0,         0,          1, 0],
-                        [0 , 0, 0 , 1]
-                    ]
-        
+
+        matScale3D = [
+            [2 / width, 0, 0, 0],
+            [0, 2 / height, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ]
+
         matPPC3D = np.dot(np.dot(matTrans3D, matRot3D), matScale3D)
         self.ppcMatrix3D = matPPC3D
 
     def apply_ppc_matrix_one(self, obj):
         if obj.type == "Point":
             P = [obj.x, obj.y, 1]
-            (X,Y,W) = np.dot(P, self.ppcMatrix)
+            X, Y, W = np.dot(P, self.ppcMatrix)
             obj.cn_x = X
             obj.cn_y = Y
 
         elif obj.type == "Line":
             P1 = [obj.p1.x, obj.p1.y, 1]
             P2 = [obj.p2.x, obj.p2.y, 1]
-            (X1, Y1, W1) = np.dot(P1, self.ppcMatrix)
-            (X2, Y2, W2) = np.dot(P2, self.ppcMatrix)
+            X1, Y1, W1 = np.dot(P1, self.ppcMatrix)
+            X2, Y2, W2 = np.dot(P2, self.ppcMatrix)
             obj.p1.cn_x = X1
             obj.p1.cn_y = Y1
             obj.p2.cn_x = X2
             obj.p2.cn_y = Y2
 
-        elif obj.type == "Polygon" or obj.type == "Curve":
+        elif obj.type in ["Polygon", "Curve"]:
             for p in obj.points:
-                P = (p.x, p.y, 1)
-                (X,Y,W) = np.matmul(P, self.ppcMatrix)
+                P = [p.x, p.y, 1]
+                X, Y, W = np.matmul(P, self.ppcMatrix)
                 p.cn_x = X
                 p.cn_y = Y
 
-        elif obj.type == "Point3D": 
+        elif obj.type == "Point3D":
             if self.projPersp.isChecked():
-                nx = obj.x/(obj.z/self.perspd)
-                ny = obj.y/(obj.z/self.perspd)
-                P = (nx, ny, obj.z, 1)
+                nx = obj.x / (obj.z / self.perspd)
+                ny = obj.y / (obj.z / self.perspd)
+                P = [nx, ny, obj.z, 1]
             else:
-                P = (obj.x, obj.y, obj.z, 1)
+                P = [obj.x, obj.y, obj.z, 1]
             
-            (X,Y,Z,_) = np.dot(P, self.ppcMatrix3D)
+            X, Y, Z, _ = np.dot(P, self.ppcMatrix3D)
             obj.cn_x = X
             obj.cn_y = Y
             obj.cn_z = Z
@@ -1782,13 +1787,13 @@ class Ui(QtWidgets.QMainWindow):
         elif obj.type == "Object3D":
             for p in obj.points:
                 if self.projPersp.isChecked():
-                    nx = p.x/(p.z/self.perspd)
-                    ny = p.y/(p.z/self.perspd)
-                    P = (nx, ny, p.z, 1)
+                    nx = p.x / (p.z / self.perspd)
+                    ny = p.y / (p.z / self.perspd)
+                    P = [nx, ny, p.z, 1]
                 else:
-                    P = (p.x, p.y, p.z, 1)
-                
-                (X,Y,Z, W) = np.matmul(P, self.ppcMatrix3D)
+                    P = [p.x, p.y, p.z, 1]
+
+                X, Y, Z, W = np.matmul(P, self.ppcMatrix3D)
                 p.cn_x = X
                 p.cn_y = Y
                 p.cn_z = Z
