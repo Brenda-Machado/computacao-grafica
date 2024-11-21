@@ -73,7 +73,6 @@ class DescriptorOBJ:
                 newObj = PreObject(e[1])
                 newObj.name = newObj.name[0]
                 preobjects.append(newObj)
-                print(newObj.name)
 
             elif e[0] == "usemtl":
                cor = colors[e[1][0]]
@@ -83,7 +82,6 @@ class DescriptorOBJ:
                 file = e[1][0]
                 file_path = str(pathlib.Path().absolute() / "obj" / file)
                 colors = self.parseMtl(file_path)
-                print(colors)
 
             elif e[0] == "p":
                 index = int(e[1][0])
@@ -102,7 +100,6 @@ class DescriptorOBJ:
                 preobjects[objIndex].edges.append((len(preobjects[objIndex].points)-2, len(preobjects[objIndex].points)-1))
 
             elif e[0] == "f":
-                print(e[1])
                 points = e[1]
                 pointList = []
                 listIndex = len(preobjects[objIndex].points)
@@ -122,7 +119,6 @@ class DescriptorOBJ:
         for pre in preobjects:
             realObj = Object3D(pre.points, pre.edges, pre.name, pre.color)
             objects.append(realObj)
-            print(pre.color)
             
         return objects
 

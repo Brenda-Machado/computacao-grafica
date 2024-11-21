@@ -837,77 +837,55 @@ class Ui(QtWidgets.QMainWindow):
     def new_3d_bezier_window(self):
         new_bezier_curve = UiBezierCurve()
 
-        p1 = Point3D(int(new_bezier_curve.xValue.text()), int(new_bezier_curve.yValue.text()), int(new_bezier_curve.zValue.text()))
-        p2 = Point3D(int(new_bezier_curve.xValue_2.text()), int(new_bezier_curve.yValue_2.text()), int(new_bezier_curve.zValue_2.text()))
-        p3 = Point3D(int(new_bezier_curve.xValue_3.text()), int(new_bezier_curve.yValue_3.text()), int(new_bezier_curve.zValue_3.text()))
-        p4 = Point3D(int(new_bezier_curve.xValue_4.text()), int(new_bezier_curve.yValue_4.text()), int(new_bezier_curve.zValue_4.text()))
-        p5 = Point3D(int(new_bezier_curve.xValue_5.text()), int(new_bezier_curve.yValue_5.text()), int(new_bezier_curve.zValue_5.text()))
-        p6 = Point3D(int(new_bezier_curve.xValue_6.text()), int(new_bezier_curve.yValue_6.text()), int(new_bezier_curve.zValue_6.text()))
-        p7 = Point3D(int(new_bezier_curve.xValue_7.text()), int(new_bezier_curve.yValue_7.text()), int(new_bezier_curve.zValue_7.text()))
-        p8 = Point3D(int(new_bezier_curve.xValue_8.text()), int(new_bezier_curve.yValue_8.text()), int(new_bezier_curve.zValue_8.text()))
-        p9 = Point3D(int(new_bezier_curve.xValue_9.text()), int(new_bezier_curve.yValue_9.text()), int(new_bezier_curve.zValue_9.text()))
-        p10 = Point3D(int(new_bezier_curve.xValue_10.text()), int(new_bezier_curve.yValue_10.text()), int(new_bezier_curve.zValue_10.text()))
-        p11 = Point3D(int(new_bezier_curve.xValue_11.text()), int(new_bezier_curve.yValue_11.text()), int(new_bezier_curve.zValue_11.text()))
-        p12 = Point3D(int(new_bezier_curve.xValue_12.text()), int(new_bezier_curve.yValue_12.text()), int(new_bezier_curve.zValue_12.text()))
-        p13 = Point3D(int(new_bezier_curve.xValue_13.text()), int(new_bezier_curve.yValue_13.text()), int(new_bezier_curve.zValue_13.text()))
-        p14 = Point3D(int(new_bezier_curve.xValue_14.text()), int(new_bezier_curve.yValue_14.text()), int(new_bezier_curve.zValue_14.text()))
-        p15 = Point3D(int(new_bezier_curve.xValue_15.text()), int(new_bezier_curve.yValue_15.text()), int(new_bezier_curve.zValue_15.text()))
-        p16 = Point3D(int(new_bezier_curve.xValue_16.text()), int(new_bezier_curve.yValue_16.text()), int(new_bezier_curve.zValue_16.text()))
-        
-        precision = 0.2
-        
-        ps = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16]
-        
-        gbsx = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-        gbsy = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-        gbsz = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-        
-        p = 0
+        if (new_bezier_curve.exec_()):
 
-        for i in range(4):
-            for j in range(4):
-                gbsx[i][j] = ps[p].x
-                gbsy[i][j] = ps[p].y
-                gbsz[i][j] = ps[p].z
-                p += 1
-        
-        mb = [[-1, 3, -3, 1],
-              [3, -6, 3, 0],
-              [-3, 3, 0, 0],
-              [1, 0, 0, 0]]
-        
-        newxs = []
-        newys = []
-        newzs = []
-        
-        for s in np.arange(0, 1, precision):
-            for t in np.arange(0, 1, precision):
-                mats = [s**3, s**2, s, 1]
-                matt = [t**3, t**2, t, 1]
-                xst = reduce(np.dot, [mats, mb, gbsx, np.array(mb).T, np.array(matt).T])
-                yst = reduce(np.dot, [mats, mb, gbsy, np.array(mb).T, np.array(matt).T])
-                zst = reduce(np.dot, [mats, mb, gbsz, np.array(mb).T, np.array(matt).T])
-                newxs.append(xst)
-                newys.append(yst)
-                newzs.append(zst)
-                
-        points = []
-        edges = []
-        zipped = list(zip(newxs, newys, newzs))
+            points = []
+            p1 = Point3D(int(new_bezier_curve.xValue.text()), int(new_bezier_curve.yValue.text()), int(new_bezier_curve.zValue.text()))
+            points.append(p1)
 
-        for p in zipped:
-            points.append(Point3D(p[0], p[1], p[2]))
-            
-        for i in range(1, len(points)):
-            edges.append((i-1, i))
-            
-        newbibezier = Object3D(points, edges, "Curve 3D {}".format(self.indexes[6]))
-        self.displayFile.append(newbibezier)
-        self.indexes[6] += 1
-        self.objectList.addItem(newbibezier.name)
-        self.draw_one(newbibezier)
-        self.status.addItem("New Object 3D Added")
-        self.update()
+            for i in range(2, 17):  
+                x = int(getattr(new_bezier_curve, f"xValue_{i}").text())
+                y = int(getattr(new_bezier_curve, f"yValue_{i}").text())
+                z = int(getattr(new_bezier_curve, f"zValue_{i}").text())
+                points.append(Point3D(x, y, z))
+
+            gbsx, gbsy, gbsz = np.zeros((4, 4)), np.zeros((4, 4)), np.zeros((4, 4))
+            p = 0
+            for i in range(4):
+                for j in range(4):
+                    gbsx[i, j], gbsy[i, j], gbsz[i, j] = points[p].x, points[p].y, points[p].z
+                    p += 1
+
+            mb = np.array([[-1, 3, -3, 1],
+                        [3, -6, 3, 0],
+                        [-3, 3, 0, 0],
+                        [1, 0, 0, 0]])
+
+            precision = 0.2
+            newxs, newys, newzs = [], [], []
+
+            for s in np.arange(0, 1, precision):
+                for t in np.arange(0, 1, precision):
+                    mats = np.array([s**3, s**2, s, 1])
+                    matt = np.array([t**3, t**2, t, 1])
+
+                    xst = mats.dot(mb).dot(gbsx).dot(mb.T).dot(matt.T)
+                    yst = mats.dot(mb).dot(gbsy).dot(mb.T).dot(matt.T)
+                    zst = mats.dot(mb).dot(gbsz).dot(mb.T).dot(matt.T)
+
+                    newxs.append(xst)
+                    newys.append(yst)
+                    newzs.append(zst)
+
+            points = [Point3D(x, y, z) for x, y, z in zip(newxs, newys, newzs)]
+            edges = [(i - 1, i) for i in range(1, len(points))]
+            newbibezier = Object3D(points, edges, f"Curve 3D {self.indexes[6]}")
+            self.displayFile.append(newbibezier)
+            self.indexes[6] += 1
+            self.objectList.addItem(newbibezier.name)
+            self.draw_one(newbibezier)
+            self.status.addItem("New Object 3D Added")
+            self.update()
 
     def new_curve_fd_window(self):
         NewBfFdDialog = UiCurveFd()
