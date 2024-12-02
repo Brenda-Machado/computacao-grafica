@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Transform</string>
   </property>
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
@@ -43,7 +43,7 @@
    </property>
    <widget class="QWidget" name="transTab_2">
     <attribute name="title">
-     <string>Translação</string>
+     <string>Translation</string>
     </attribute>
     <widget class="QLineEdit" name="transX">
      <property name="geometry">
@@ -117,7 +117,7 @@
    </widget>
    <widget class="QWidget" name="escTab_2">
     <attribute name="title">
-     <string>Escalonamento</string>
+     <string>Escalation</string>
     </attribute>
     <widget class="QLabel" name="label_10">
      <property name="geometry">
@@ -175,7 +175,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Y</string>
+      <string>Z</string>
      </property>
     </widget>
     <widget class="QLineEdit" name="escZ">
@@ -339,7 +339,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Y</string>
+       <string>Z</string>
       </property>
      </widget>
     </widget>
@@ -376,7 +376,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>Eixo Z</string>
+      <string>Z</string>
      </property>
     </widget>
     <widget class="QLineEdit" name="rotZ">
